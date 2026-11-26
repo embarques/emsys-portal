@@ -472,11 +472,23 @@ function SearchableSelectDropdown({
     );
   }, [fitToOptions, options, placeholder]);
 
+  function isSuppressedOpenOnFocus() {
+    const active =
+      document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    return (
+      isAutomaticSelectionFocus(inputRef.current) ||
+      isAutomaticSelectionFocus(triggerRef.current) ||
+      isAutomaticSelectionFocus(active)
+    );
+  }
+
   function focusSearchInput(shouldSelectAll = false) {
     if (disabled || skipOpenOnFocusRef.current) return;
     // Deposit/Zelle mount a bank selector during selection. Focus it without
     // opening another Popper while the first popup and form are still settling.
-    if (isAutomaticSelectionFocus(inputRef.current ?? triggerRef.current)) {
+    // Wizard/dialog step autofocus uses the same marker so pickup reference
+    // (and other first fields) do not pop open on Edit sender/receiver.
+    if (isSuppressedOpenOnFocus()) {
       if (openOnNavigationFocus) {
         window.requestAnimationFrame(() => {
           if (document.activeElement === inputRef.current) openDropdown();

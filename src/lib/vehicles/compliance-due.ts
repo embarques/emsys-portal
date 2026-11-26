@@ -54,19 +54,22 @@ export function getVehicleComplianceDue(
   return { vehicle, kind, date, daysRemaining };
 }
 
+/** Inspection/registration alerts for one vehicle, most urgent first. */
+export function listVehicleComplianceDue(vehicle: Vehicle, today: string): VehicleComplianceDue[] {
+  return VEHICLE_COMPLIANCE_KINDS.map((kind) => getVehicleComplianceDue(vehicle, kind, today))
+    .filter((entry): entry is VehicleComplianceDue => entry !== null)
+    .sort((a, b) => a.daysRemaining - b.daysRemaining);
+}
+
 /** True when any compliance date on the vehicle needs attention. */
 export function vehicleHasComplianceDue(vehicle: Vehicle, today: string): boolean {
-  return VEHICLE_COMPLIANCE_KINDS.some((kind) => getVehicleComplianceDue(vehicle, kind, today) !== null);
+  return listVehicleComplianceDue(vehicle, today).length > 0;
 }
 
 /** Most urgent first (overdue before upcoming), then by vehicle name. */
 export function collectVehicleComplianceDue(vehicles: readonly Vehicle[], today: string): VehicleComplianceDue[] {
   return vehicles
-    .flatMap((vehicle) =>
-      VEHICLE_COMPLIANCE_KINDS.map((kind) => getVehicleComplianceDue(vehicle, kind, today)).filter(
-        (entry): entry is VehicleComplianceDue => entry !== null,
-      ),
-    )
+    .flatMap((vehicle) => listVehicleComplianceDue(vehicle, today))
     .sort((a, b) => a.daysRemaining - b.daysRemaining || a.vehicle.name.localeCompare(b.vehicle.name));
 }
 

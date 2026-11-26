@@ -159,7 +159,7 @@ for (const language of ["en","es"]) test(`${language}: responsibility guidance a
  const invoices=JSON.parse(fs.readFileSync(path.join(root,`src/locales/${language}/invoices.json`),"utf8"));
  assert.ok(invoices.assigned.errors.employeeNotLinkedOpenEmployees);
  assert.ok(invoices.form.fields.pickupSourceCreator);
- assert.ok(invoices.form.hints.selfResponsibility);
+ assert.ok(invoices.form.fields.responsibleParty);
 });
 
 

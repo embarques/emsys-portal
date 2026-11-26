@@ -7,14 +7,11 @@ import { useFormEnterNavigation } from "@/hooks/use-form-enter-navigation";
 
 import { FieldEntityActions } from "@/components/forms/field-entity-actions";
 import { FormBody, FormFooterNoticeMessage, FormSection } from "@/components/forms/form-shell";
-import { wizardInputFieldProps, wizardSelectClassNameFor, wizardSelectFieldProps } from "@/components/invoices/invoice-wizard-styles";
+import { wizardInputFieldProps, wizardSelectClassNameFor } from "@/components/invoices/invoice-wizard-styles";
 
 import { DateInput } from "@/components/ui/date-input";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { SearchableSelect } from "@/components/ui/searchable-select";
-import { SegmentedControl } from "@/components/ui/segmented-control";
 import { SwitchField } from "@/components/ui/switch-field";
 import { CustomerContactSummary } from "@/components/orders/customer-contact-summary";
 import { CustomerPartySelect } from "@/components/customers/customer-party-select";
@@ -23,12 +20,9 @@ import { useIsGoogleMapsConfigured } from "@/lib/company/hooks/use-current-compa
 import { OrderCommentsEditor } from "@/components/orders/order-comments-editor";
 import { SenderOrderHistorySection } from "@/components/orders/sender-order-history-section";
 
-import { useBranchPicker } from "@/lib/branches/hooks/use-branches";
 import { useApplyCustomerOnTabReturn } from "@/lib/customers/hooks/use-apply-customer-on-tab-return";
 
 import { CUSTOMER_TYPE_RECEIVER, CUSTOMER_TYPE_SENDER, type Customer } from "@/lib/customers/types";
-import { useEmployees } from "@/lib/employees/hooks/use-employees";
-import { DEFAULT_EMPLOYEE_LIST_PARAMS } from "@/lib/employees/types";
 import { useWorkspaceTabs } from "@/lib/layout/hooks/use-workspace-tabs";
 import {
   createEmptyOrderForm,
@@ -45,7 +39,6 @@ import {
 import {
   getAppointmentDetailsError,
   getAppointmentReceiversError,
-  getAppointmentStepError,
   getCompleteAppointmentReceivers,
   getOtherReceiverCustomerIds,
   hasEmptyAppointmentReceiverTemplate,
@@ -66,8 +59,7 @@ type OrderFormProps = {
 };
 
 type PartySide = "sender" | "receiver";
-type CreatePhase = "details" | "receivers";
-type EditPartyTab = "sender" | "receivers";
+type FormPhase = "details" | "receivers";
 
 function resolveAddedAddressIndex(
   previous: Pick<Customer, "addresses">,
@@ -118,12 +110,7 @@ export function OrderForm({
 }: OrderFormProps) {
   const { t } = useTranslation();
   const googleMapsConfigured = useIsGoogleMapsConfigured();
-  const { data: branchesData } = useBranchPicker();
-  const employeesQuery = useEmployees({ ...DEFAULT_EMPLOYEE_LIST_PARAMS, limit: 200 });
   const { openFormTab } = useWorkspaceTabs();
-
-  const branches = branchesData?.items ?? [];
-  const employees = employeesQuery.data?.items ?? [];
 
   const [values, setValues] = useState<OrderFormValues>(initialValues ?? createEmptyOrderForm());
   const [historySenderId, setHistorySenderId] = useState<string | null>(null);
@@ -131,8 +118,7 @@ export function OrderForm({
   const [formError, setFormError] = useState<string | null>(null);
   const [isLocalSubmitting, setIsLocalSubmitting] = useState(false);
   const [skipReceivers, setSkipReceivers] = useState(true);
-  const [createPhase, setCreatePhase] = useState<CreatePhase>("details");
-  const [editPartyTab, setEditPartyTab] = useState<EditPartyTab>("sender");
+  const [formPhase, setFormPhase] = useState<FormPhase>("details");
   const [receiverToFocus, setReceiverToFocus] = useState<string | null>(null);
   const receiverPanelRef = useRef<HTMLDivElement>(null);
   const addReceiverButtonRef = useRef<HTMLButtonElement>(null);
@@ -192,16 +178,18 @@ export function OrderForm({
     },
   );
   const isSubmitting = isSubmittingProp || isLocalSubmitting;
-  const showReceiversStep = !isEditing && createPhase === "receivers";
+  const showReceiversStep = formPhase === "receivers";
 
   useEffect(() => {
-    setValues(initialValues ?? createEmptyOrderForm());
+    const next = initialValues ?? createEmptyOrderForm();
+    setValues(next);
     setHistorySenderId(null);
     setFormError(null);
     setReceiverToFocus(null);
+    // Match add: skip the receivers step by default. Existing edit receivers stay
+    // on the draft until the user opens that step and changes them.
     setSkipReceivers(true);
-    setCreatePhase("details");
-    setEditPartyTab("sender");
+    setFormPhase("details");
   }, [initialValues]);
 
   function updateField<K extends keyof OrderFormValues>(key: K, value: OrderFormValues[K]) {
@@ -232,15 +220,12 @@ export function OrderForm({
       ...current,
       receivers: [...current.receivers, { key, customer: null, addressIndex: 0 }],
     }));
-    if (isEditing) setEditPartyTab("receivers");
     setReceiverToFocus(key);
     setFormError(null);
   }
 
   function removeReceiver(key: string) {
-    const remaining = values.receivers.filter((row) => row.key !== key);
     setValues((current) => ({ ...current, receivers: current.receivers.filter((row) => row.key !== key) }));
-    if (isEditing && remaining.length === 0) setEditPartyTab("sender");
     setFormError(null);
     addReceiverButtonRef.current?.focus();
   }
@@ -329,18 +314,13 @@ export function OrderForm({
 
   const detailsValidationKey = getAppointmentDetailsError(values, blockForUnverifiedParty);
   const receiversValidationKey = getAppointmentReceiversError(values);
-  const editValidationKey = isEditing
-    ? getAppointmentStepError(values, 3, blockForUnverifiedParty)
-    : null;
 
   const blockReasonKey = showReceiversStep
     ? (detailsValidationKey ?? receiversValidationKey)
-    : isEditing
-      ? editValidationKey
-      : detailsValidationKey;
+    : detailsValidationKey;
   const blockReason = blockReasonKey ? t(blockReasonKey) : null;
 
-  const primaryLabel = !isEditing && createPhase === "details" && !skipReceivers
+  const primaryLabel = formPhase === "details" && !skipReceivers
     ? t("orders.form.workflow.next")
     : submitLabel;
 
@@ -349,7 +329,7 @@ export function OrderForm({
 
     if (isSubmitting) return;
 
-    if (!isEditing && createPhase === "details" && !skipReceivers) {
+    if (formPhase === "details" && !skipReceivers) {
       if (detailsValidationKey) {
         const message = t(detailsValidationKey);
         setFormError(message);
@@ -362,7 +342,7 @@ export function OrderForm({
         ...current,
         receivers: withTrailingEmptyAppointmentReceiver(current.receivers),
       }));
-      setCreatePhase("receivers");
+      setFormPhase("receivers");
       return;
     }
 
@@ -376,7 +356,9 @@ export function OrderForm({
     const submitValues = {
       ...values,
       receivers:
-        !isEditing && skipReceivers ? [] : getCompleteAppointmentReceivers(values.receivers),
+        // Create: skipping clears receivers. Edit: keep existing unless the user
+        // opened the receivers step and changed them.
+        skipReceivers && !isEditing ? [] : getCompleteAppointmentReceivers(values.receivers),
     };
 
     setIsLocalSubmitting(true);
@@ -388,7 +370,7 @@ export function OrderForm({
         setHistorySenderId(null);
         setReceiverToFocus(null);
         setSkipReceivers(true);
-        setCreatePhase("details");
+        setFormPhase("details");
       }
     } finally {
       setIsLocalSubmitting(false);
@@ -454,111 +436,31 @@ export function OrderForm({
   }
 
   function renderScheduleSection() {
-    const dateInput = (
-      <>
-        <Label htmlFor="date" className={isEditing ? undefined : "sr-only"}>
-          {t("orders.form.sections.pickupDate")}
-          {isEditing ? <span className="text-destructive"> *</span> : null}
-        </Label>
-        <DateInput
-          id="date"
-          fitContent={!isEditing}
-          {...wizardInputFieldProps(
-            values.date,
-            isEditing
-              ? cn(
-                  "pl-9 text-right md:pl-8",
-                  // Edit: fill the field; WebKit's date value needs w-full for text-align.
-                  "[&::-webkit-date-and-time-value]:w-full [&::-webkit-date-and-time-value]:text-right",
-                  "[&::-webkit-datetime-edit]:flex [&::-webkit-datetime-edit]:w-full [&::-webkit-datetime-edit]:justify-end",
-                )
-              : "h-9",
-          )}
-          value={values.date}
-          onChange={(event) => updateField("date", event.target.value)}
-          required
-        />
-      </>
-    );
-
-    // Create: one compact header row (title + date) so sender can use the rest of the column.
-    if (!isEditing) {
-      return (
-        <FormSection
-          variant="card"
-          icon={CalendarDays}
-          title={`01 · ${t("orders.form.workflow.scheduleStep")}`}
-          required
-          className="shrink-0 space-y-0 p-3"
-          action={<div className="flex shrink-0 items-center justify-end">{dateInput}</div>}
-        >
-          {null}
-        </FormSection>
-      );
-    }
-
+    // Compact header row (title + date) so sender can use the rest of the column.
     return (
       <FormSection
         variant="card"
         icon={CalendarDays}
         title={`01 · ${t("orders.form.workflow.scheduleStep")}`}
-        className="shrink-0"
-      >
-        <div className="grid gap-3 sm:grid-cols-2">
-          <div className="space-y-1.5 sm:col-span-2">{dateInput}</div>
-          <div className="space-y-1">
-            <Label htmlFor="branchId">
-              {t("orders.form.fields.branch")} <span className="text-destructive">*</span>
+        required
+        className="shrink-0 space-y-0 p-3"
+        action={(
+          <div className="flex shrink-0 items-center justify-end">
+            <Label htmlFor="date" className="sr-only">
+              {t("orders.form.sections.pickupDate")}
             </Label>
-            <SearchableSelect
-              id="branchId"
-              {...wizardSelectFieldProps(values.branchId)}
-              value={String(values.branchId)}
-              onValueChange={(next) => updateField("branchId", Number(next))}
-              searchPlaceholder={t("orders.form.placeholders.searchBranches")}
+            <DateInput
+              id="date"
+              fitContent
+              {...wizardInputFieldProps(values.date, "h-9")}
+              value={values.date}
+              onChange={(event) => updateField("date", event.target.value)}
               required
-              mobileSheet
-              options={branches.map((branch) => ({
-                value: String(branch.id),
-                label: `${branch.name} · ${branch.code}`,
-              }))}
             />
           </div>
-
-          <div className="space-y-1">
-            <Label htmlFor="employeeId">{t("orders.form.fields.employee")}</Label>
-            <SearchableSelect
-              id="employeeId"
-              {...wizardSelectFieldProps(values.employeeId)}
-              value={String(values.employeeId)}
-              onValueChange={(next) => updateField("employeeId", next ? Number(next) : "")}
-              placeholder={t("orders.form.fields.noEmployee")}
-              searchPlaceholder={t("orders.form.placeholders.searchEmployees")}
-              mobileSheet
-              options={[
-                { value: "", label: t("orders.form.fields.noEmployee") },
-                ...employees.map((employee) => ({
-                  value: String(employee.id),
-                  label: `${employee.name} · ${employee.department}`,
-                })),
-              ]}
-            />
-          </div>
-
-          <div className="hidden space-y-1 md:block">
-            <Label htmlFor="sectorId">{t("orders.form.fields.sector")}</Label>
-            <Input
-              id="sectorId"
-              {...wizardInputFieldProps(values.sectorId)}
-              type="number"
-              min="0"
-              value={values.sectorId}
-              onChange={(event) =>
-                updateField("sectorId", event.target.value ? Number(event.target.value) : "")
-              }
-            />
-          </div>
-        </div>
+        )}
+      >
+        {null}
       </FormSection>
     );
   }
@@ -661,81 +563,6 @@ export function OrderForm({
     );
   }
 
-  function renderEditPartySection() {
-    const hasReceivers = values.receivers.length > 0;
-    const showingReceivers = hasReceivers && editPartyTab === "receivers";
-    const showingHistory = !showingReceivers && showHistory;
-
-    return (
-      <FormSection
-        variant="card"
-        fill
-        icon={showingReceivers ? Users : showingHistory ? History : Users}
-        title={
-          showingReceivers
-            ? `03 · ${t("orders.form.workflow.receiverStep")}`
-            : showingHistory
-              ? t("orders.history.sectionTitle")
-              : `02 · ${t("orders.form.workflow.senderStep")}`
-        }
-        description={showingReceivers ? t("orders.form.workflow.receiversStepHint") : undefined}
-        className="@3xl:min-h-0 @3xl:flex-1 [&>div:first-child]:flex-wrap"
-        action={
-          showingReceivers ? (
-            <Button ref={addReceiverButtonRef} type="button" variant="outline" size="sm" onClick={addReceiver}>
-              <UserPlus className="size-4" />
-              {t("orders.form.partyActions.addReceiver")}
-            </Button>
-          ) : (
-            renderSenderHistoryAction()
-          )
-        }
-      >
-        <div className="flex min-h-0 flex-1 flex-col gap-3">
-          {hasReceivers ? (
-            <SegmentedControl
-              id="edit-party-tab"
-              aria-label={t("orders.form.workflow.partyTabGroup")}
-              value={editPartyTab}
-              onValueChange={setEditPartyTab}
-              className="shrink-0"
-              options={[
-                { value: "sender", label: t("orders.form.workflow.partyTabSender") },
-                {
-                  value: "receivers",
-                  label: t("orders.form.workflow.partyTabReceiversCount", {
-                    count: values.receivers.length,
-                  }),
-                },
-              ]}
-            />
-          ) : null}
-
-          {showingReceivers ? (
-            renderReceiverList(true)
-          ) : (
-            <>
-              {renderSenderBody(true)}
-              {!hasReceivers ? (
-                <Button
-                  ref={addReceiverButtonRef}
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="shrink-0 self-start"
-                  onClick={addReceiver}
-                >
-                  <UserPlus className="size-4" />
-                  {t("orders.form.partyActions.addReceiver")}
-                </Button>
-              ) : null}
-            </>
-          )}
-        </div>
-      </FormSection>
-    );
-  }
-
   return (
     <form onSubmit={handleSubmit} onKeyDown={handleEnterNavigation} className="flex min-h-0 flex-1 flex-col">
       <FormBody isBusy={isSubmitting} className="@container min-h-0 min-w-0 space-y-5 overflow-x-hidden bg-background p-4 py-5 md:bg-muted/35 md:p-6">
@@ -760,24 +587,18 @@ export function OrderForm({
             <div className="grid items-start gap-5 @3xl:h-full @3xl:grid-cols-2 @3xl:grid-rows-[minmax(0,1fr)]">
               <div className="flex min-h-0 min-w-0 flex-col gap-3 @3xl:h-full @3xl:self-stretch @3xl:overflow-hidden">
                 {renderScheduleSection()}
-                {isEditing ? (
-                  renderEditPartySection()
-                ) : (
-                  <>
-                    {renderSenderSection(true)}
-                    <SwitchField
-                      id="skip-receivers"
-                      className="shrink-0"
-                      label={t("orders.form.workflow.skipReceivers")}
-                      description={t("orders.form.workflow.skipReceiversHint")}
-                      checked={skipReceivers}
-                      onCheckedChange={(checked) => {
-                        setSkipReceivers(checked);
-                        setFormError(null);
-                      }}
-                    />
-                  </>
-                )}
+                {renderSenderSection(true)}
+                <SwitchField
+                  id="skip-receivers"
+                  className="shrink-0"
+                  label={t("orders.form.workflow.skipReceivers")}
+                  description={t("orders.form.workflow.skipReceiversHint")}
+                  checked={skipReceivers}
+                  onCheckedChange={(checked) => {
+                    setSkipReceivers(checked);
+                    setFormError(null);
+                  }}
+                />
               </div>
 
               <FormSection
@@ -816,7 +637,7 @@ export function OrderForm({
                 variant="outline"
                 disabled={isSubmitting}
                 onClick={() => {
-                  setCreatePhase("details");
+                  setFormPhase("details");
                   setFormError(null);
                 }}
                 className="h-12 rounded-xl px-4 text-base md:h-9 md:rounded-md md:text-sm"
@@ -834,7 +655,7 @@ export function OrderForm({
               className="h-12 rounded-xl px-4 text-base md:h-9 md:rounded-md md:text-sm">
               {isSubmitting ? (
                 <Loader2 className="size-4 animate-spin" />
-              ) : !isEditing && createPhase === "details" && !skipReceivers ? null : (
+              ) : formPhase === "details" && !skipReceivers ? null : (
                 <Save className="size-4" />
               )}
               {isSubmitting ? t("common.actions.saving") : primaryLabel}

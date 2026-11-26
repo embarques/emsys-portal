@@ -74,6 +74,8 @@
   "badges": {
     "pendingAppointments": "{{count}} citas pendientes",
     "todayTransactions": "{{count}} transacciones hoy",
-    "unresolvedComplaints": "{{count}} quejas sin resolver"
+    "unresolvedComplaints": "{{count}} quejas sin resolver",
+    "vehicleComplianceDue_one": "1 inspección o registro vencido o por vencer",
+    "vehicleComplianceDue_other": "{{count}} inspecciones o registros vencidos o por vencer"
   }
 }

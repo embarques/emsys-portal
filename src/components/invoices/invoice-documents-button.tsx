@@ -36,7 +36,7 @@ export function InvoiceDocumentsButton({
       }}
     >
       <FileText className="h-4 w-4" />
-      {t("invoices.documents.title")}
+      {t("invoices.view.actions.manageDocuments")}
     </Button>
   );
 }

@@ -42,7 +42,7 @@ export function findInvoiceWizardStep1Issue(
   values: InvoiceFormValues,
   t: Translate,
 ): InvoiceWizardIssue | null {
-  // Match step-1 visual order: number → date → container → payment location → received via.
+  // Match step-1 visual order: number → date → container → payment location → responsible party.
   if (!values.autoGenerateNumber && !values.invoiceNumber.trim()) {
     return {
       step: 1,

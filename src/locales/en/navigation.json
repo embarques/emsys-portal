@@ -74,6 +74,8 @@
   "badges": {
     "pendingAppointments": "{{count}} pending appointments",
     "todayTransactions": "{{count}} transactions today",
-    "unresolvedComplaints": "{{count}} unresolved complaints"
+    "unresolvedComplaints": "{{count}} unresolved complaints",
+    "vehicleComplianceDue_one": "1 expired or soon-due inspection or registration",
+    "vehicleComplianceDue_other": "{{count}} expired or soon-due inspections or registrations"
   }
 }

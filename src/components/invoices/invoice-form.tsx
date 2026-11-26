@@ -1,6 +1,6 @@
 "use client";
 
-import { ClipboardList, Container as ContainerIcon, Receipt, Route, UserPlus, Users, Wallet } from "lucide-react";
+import { ClipboardList, Container as ContainerIcon, Receipt, Route, UserCheck, UserPlus, UserRound, Users, Wallet } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { useResponsibilityAccess } from "@/lib/accounting/daily-income/use-responsibility-access";
@@ -23,6 +23,7 @@ import {
   CompactActionDialogHeader,
   compactActionDialogFormClassName,
 } from "@/components/forms/compact-action-dialog";
+import { ChoiceTiles } from "@/components/ui/choice-tiles";
 import { Dialog } from "@/components/ui/dialog";
 import { DateInput } from "@/components/ui/date-input";
 import { useAuth } from "@/lib/auth/hooks/use-auth";
@@ -81,6 +82,7 @@ import {
   type EmployeeFormValues,
 } from "@/lib/employees/types";
 import {
+  isInvoiceEmployeePickupSource,
   mapPaymentLocationToPaidRegion,
   computeInvoiceBalance,
   createEmptyInvoiceForm,
@@ -474,17 +476,54 @@ export function InvoiceForm({
     setFormError(null);
   }
 
-  function updatePickupRoute(routeId: string) {
-    const supervisor = resolveDailyRouteSupervisor(pickupRoutes.find((route) => route.id === routeId));
+  function updatePickupSource(next: "creator" | "supervisor" | "route") {
+    if (next === "creator") {
+      commitValues((current) => ({ ...current, ...invoiceSelfResponsibility() }));
+      setFormError(null);
+      return;
+    }
+    if (next === "supervisor") {
+      commitValues((current) => ({
+        ...current,
+        pickupSource: "office",
+        pickupEmployeeId: "",
+        pickupEmployeeName: "",
+        officeBranchId: "",
+        officeBranchName: "",
+        routeId: "",
+        routeCrewId: "",
+        routeCrewName: "",
+      }));
+      setFormError(null);
+      return;
+    }
     commitValues((current) => ({
       ...current,
-      ...invoiceSelfResponsibility(),
-      pickupSource: routeId ? "route" : isEditing && responsibility.canAssign ? "office" : "creator",
-      pickupEmployeeId: supervisor ? String(supervisor.id) : "",
-      pickupEmployeeName: supervisor?.name ?? "",
-      routeId,
+      pickupSource: "route",
+      pickupEmployeeId: "",
+      pickupEmployeeName: "",
+      officeBranchId: "",
+      officeBranchName: "",
+      routeId: "",
       routeCrewId: "",
       routeCrewName: "",
+    }));
+    setFormError(null);
+  }
+
+  function updatePickupRoute(routeId: string) {
+    const route = pickupRoutes.find((entry) => entry.id === routeId);
+    const supervisor = resolveDailyRouteSupervisor(route);
+    commitValues((current) => ({
+      ...current,
+      pickupSource: "route",
+      pickupEmployeeId: supervisor ? String(supervisor.id) : "",
+      pickupEmployeeName: supervisor?.name ?? "",
+      officeBranchId: "",
+      officeBranchName: "",
+      routeId,
+      routeCrewId: "",
+      routeCrewName: route?.name ?? "",
     }));
     setFormError(null);
   }
@@ -493,13 +532,16 @@ export function InvoiceForm({
     const employee = pickupSourceEmployees.find((entry) => String(entry.id) === employeeId);
     commitValues((current) => ({
       ...current,
-      pickupSource: employeeId === "self" ? "creator" : "office",
-      pickupEmployeeId: employeeId === "self" ? "" : employeeId,
+      pickupSource: "office",
+      pickupEmployeeId: employeeId,
       pickupEmployeeName: employee?.name ?? "",
       officeBranchId: employee ? String(employee.branch.id) : "",
       officeBranchName: employee
         ? `${employee.branch.code} — ${employee.branch.name}`.trim()
         : "",
+      routeId: "",
+      routeCrewId: "",
+      routeCrewName: "",
     }));
     setFormError(null);
   }
@@ -891,58 +933,141 @@ export function InvoiceForm({
 
   const selectedRoute = pickupRoutes.find((route) => route.id === values.routeId);
   const supervisorLabel = values.pickupEmployeeName || resolveDailyRouteSupervisor(selectedRoute)?.name ||
-    (values.pickupSource === "creator" ? responsibility.ownEmployee?.name || t("invoices.form.fields.pickupSourceCreator") : t("common.empty.dash"));
-  const responsibilityFields = (
+    (values.pickupSource === "creator"
+      ? responsibility.ownEmployee?.name || t("invoices.form.fields.pickupSourceCreator")
+      : t("common.empty.dash"));
+  const responsibilityChoice: "creator" | "supervisor" | "route" =
+    values.pickupSource === "route"
+      ? "route"
+      : isInvoiceEmployeePickupSource(values.pickupSource)
+        ? "supervisor"
+        : "creator";
+  const showSupervisorPicker = !responsibilityReadOnly && responsibility.canAssign && responsibilityChoice === "supervisor";
+  const showRoutePicker = !responsibilityReadOnly && responsibilityChoice === "route";
+  const canChooseRoute =
+    responsibility.canAssign || pickupRoutes.length > 0;
+  const responsibilityFields = responsibilityReadOnly ? (
     <>
-      {responsibilityReadOnly ? (
+      <ReadOnlyField label={t("invoices.form.fields.responsibleParty")}>
+        {responsibilityChoice === "route"
+          ? t("invoices.form.fields.pickupSourceRoute")
+          : responsibilityChoice === "supervisor"
+            ? t("invoices.form.fields.pickupSourceSupervisor")
+            : t("invoices.form.fields.pickupSourceCreator")}
+      </ReadOnlyField>
+      {responsibilityChoice === "route" ? (
         <ReadOnlyField label={t("invoices.form.fields.pickupRoute")}>
           {selectedRoute?.name || values.routeCrewName || values.routeId || t("common.empty.dash")}
         </ReadOnlyField>
-      ) : renderField(
-        t("invoices.form.fields.pickupRoute"), "routeId", false,
-        <SearchableSelect
-          id="routeId"
-          value={values.routeId}
-          onValueChange={updatePickupRoute}
-          placeholder={t("invoices.form.placeholders.noPickupRoute")}
-          searchPlaceholder={t("invoices.form.placeholders.searchPickupRoutes")}
-          loading={pickupRoutesQuery.isFetching}
-          clearable
-          openOnNavigationFocus
-          {...(isWizard ? wizardSelectFieldProps(values.routeId) : {})}
-          options={[
-            { value: "", label: t("invoices.form.placeholders.noPickupRoute") },
-            ...(values.routeId && !selectedRoute ? [{ value: values.routeId, label: values.routeCrewName || values.routeId }] : []),
-            ...pickupRouteOptions,
-          ]}
-        />,
+      ) : null}
+      <ReadOnlyField label={pickupEmployeeFieldLabel}>{supervisorLabel}</ReadOnlyField>
+    </>
+  ) : (
+    <>
+      {renderField(
+        t("invoices.form.fields.responsibleParty"),
         undefined,
-        <FieldEntityActions onAdd={openAddRoute} addIcon={Route} />,
-      )}
-      {values.routeId || responsibilityReadOnly || !responsibility.canAssign ? (
-        <ReadOnlyField label={pickupEmployeeFieldLabel}>{supervisorLabel}</ReadOnlyField>
-      ) : renderField(
-        pickupEmployeeFieldLabel, "pickupEmployeeId", true,
-        <SearchableSelect
-          id="pickupEmployeeId"
-          value={values.pickupSource === "creator" ? "self" : values.pickupEmployeeId}
-          onValueChange={updatePickupEmployee}
-          placeholder={pickupEmployeePlaceholder}
-          searchPlaceholder={t("invoices.form.placeholders.searchEmployees")}
-          manualFiltering
-          loading={pickupEmployeeSearch.isFetching || employeesQuery.isFetching}
-          onSearchChange={setPickupEmployeeQuery}
-          required
-          openOnNavigationFocus
-          {...(isWizard ? wizardSelectFieldProps(values.pickupEmployeeId) : {})}
+        true,
+        <ChoiceTiles<"creator" | "supervisor" | "route">
+          id="invoice-pickup-source"
+          aria-label={t("invoices.form.fields.responsibleParty")}
+          className="sm:grid-cols-3"
+          value={responsibilityChoice}
+          onValueChange={updatePickupSource}
           options={[
-            ...(!isEditing && !pickupEmployeeQuery.trim() ? [{ value: "self", label: t("invoices.form.fields.pickupSourceCreator") }] : []),
-            ...pickupEmployeeOptions,
-          ]}
+            {
+              value: "creator" as const,
+              label: t("invoices.form.fields.pickupSourceCreator"),
+              description: t("invoices.form.hints.pickupSourceCreator"),
+              icon: UserCheck,
+              iconClassName: "text-emerald-700",
+              iconBackgroundClassName: "bg-emerald-50 dark:bg-muted",
+            },
+            {
+              value: "supervisor" as const,
+              label: t("invoices.form.fields.pickupSourceSupervisor"),
+              description: t("invoices.form.hints.pickupSourceSupervisor"),
+              icon: UserRound,
+              iconClassName: "text-blue-600",
+              iconBackgroundClassName: "bg-blue-50 dark:bg-muted",
+              disabled: !responsibility.canAssign,
+            },
+            {
+              value: "route" as const,
+              label: t("invoices.form.fields.pickupSourceRoute"),
+              description: t("invoices.form.hints.pickupSourceRoute"),
+              icon: Route,
+              iconClassName: "text-indigo-700",
+              iconBackgroundClassName: "bg-indigo-50 dark:bg-muted",
+              disabled: !canChooseRoute,
+            },
+          ].filter((option) =>
+            option.value === "creator" ||
+            option.value === "supervisor" && responsibility.canAssign ||
+            option.value === "route" && canChooseRoute,
+          )}
         />,
-        undefined,
-        <FieldEntityActions onAdd={openAddEmployee} addIcon={UserPlus} />,
       )}
+      {showRoutePicker
+        ? renderField(
+            t("invoices.form.fields.pickupRoute"),
+            "routeId",
+            true,
+            <SearchableSelect
+              id="routeId"
+              value={values.routeId}
+              onValueChange={updatePickupRoute}
+              placeholder={t("invoices.form.placeholders.selectPickupRoute")}
+              searchPlaceholder={t("invoices.form.placeholders.searchPickupRoutes")}
+              loading={pickupRoutesQuery.isFetching}
+              required
+              openOnNavigationFocus
+              {...(isWizard ? wizardSelectFieldProps(values.routeId) : {})}
+              options={[
+                ...(values.routeId && !selectedRoute
+                  ? [{ value: values.routeId, label: values.routeCrewName || values.routeId }]
+                  : []),
+                ...pickupRouteOptions,
+              ]}
+            />,
+            undefined,
+            <FieldEntityActions onAdd={openAddRoute} addIcon={Route} />,
+          )
+        : null}
+      {showRoutePicker ? (
+        <div className="space-y-2 rounded-xl border border-border bg-card p-4 shadow-xs">
+          <p className="text-sm font-semibold text-foreground">
+            {t("invoices.form.fields.responsibleSupervisor")}
+          </p>
+          <p className="text-sm text-foreground">{supervisorLabel}</p>
+          <p className="border-t border-border pt-3 text-xs text-muted-foreground">
+            {t("invoices.form.hints.routeSupervisorAccountability")}
+          </p>
+        </div>
+      ) : null}
+      {showSupervisorPicker
+        ? renderField(
+            pickupEmployeeFieldLabel,
+            "pickupEmployeeId",
+            true,
+            <SearchableSelect
+              id="pickupEmployeeId"
+              value={values.pickupEmployeeId}
+              onValueChange={updatePickupEmployee}
+              placeholder={pickupEmployeePlaceholder}
+              searchPlaceholder={t("invoices.form.placeholders.searchEmployees")}
+              manualFiltering
+              loading={pickupEmployeeSearch.isFetching || employeesQuery.isFetching}
+              onSearchChange={setPickupEmployeeQuery}
+              required
+              openOnNavigationFocus
+              {...(isWizard ? wizardSelectFieldProps(values.pickupEmployeeId) : {})}
+              options={pickupEmployeeOptions}
+            />,
+            undefined,
+            <FieldEntityActions onAdd={openAddEmployee} addIcon={UserPlus} />,
+          )
+        : null}
     </>
   );
 
@@ -973,42 +1098,49 @@ export function InvoiceForm({
   const detailsFields = (
     <div className="grid min-w-0 grid-cols-1 gap-4">
       {invoiceNumberField}
-      {renderField(
-        t("invoices.form.fields.date"),
-        "date",
-        true,
-        <DateInput
-          id="date"
-          value={values.date}
-          onChange={(event) => updateField("date", event.target.value)}
-          {...(isWizard ? wizardInputFieldProps(values.date, "pl-9 md:pl-8") : {})}
-          required
-        />,
-      )}
-      {renderField(
-        t("invoices.form.fields.container"),
-        "containerId",
-        true,
-        <SearchableSelect
-          id="containerId"
-          value={values.containerId}
-          onValueChange={(next) => updateField("containerId", next)}
-          placeholder={t("invoices.form.placeholders.selectContainer")}
-          searchPlaceholder={t("invoices.form.placeholders.searchContainers")}
-          {...(isWizard ? wizardSelectFieldProps(values.containerId) : {})}
-          required
-          options={[
-            { value: "", label: t("invoices.form.placeholders.selectContainer") },
-            ...containers.map((container) => ({
-              value: String(container.id),
-              label: container.name,
-            })),
-          ]}
-        />,
-        undefined,
-        <FieldEntityActions onAdd={openAddContainer} addIcon={ContainerIcon} />,
-      )}
-      {paymentLocationField}
+      <div
+        className={cn(
+          "grid min-w-0 gap-4",
+          !isPhoneWizard && (showPaymentLocation ? "sm:grid-cols-3" : "sm:grid-cols-2"),
+        )}
+      >
+        {renderField(
+          t("invoices.form.fields.date"),
+          "date",
+          true,
+          <DateInput
+            id="date"
+            value={values.date}
+            onChange={(event) => updateField("date", event.target.value)}
+            {...(isWizard ? wizardInputFieldProps(values.date, "pl-9 md:pl-8") : {})}
+            required
+          />,
+        )}
+        {renderField(
+          t("invoices.form.fields.container"),
+          "containerId",
+          true,
+          <SearchableSelect
+            id="containerId"
+            value={values.containerId}
+            onValueChange={(next) => updateField("containerId", next)}
+            placeholder={t("invoices.form.placeholders.selectContainer")}
+            searchPlaceholder={t("invoices.form.placeholders.searchContainers")}
+            {...(isWizard ? wizardSelectFieldProps(values.containerId) : {})}
+            required
+            options={[
+              { value: "", label: t("invoices.form.placeholders.selectContainer") },
+              ...containers.map((container) => ({
+                value: String(container.id),
+                label: container.name,
+              })),
+            ]}
+          />,
+          undefined,
+          <FieldEntityActions onAdd={openAddContainer} addIcon={ContainerIcon} />,
+        )}
+        {paymentLocationField}
+      </div>
       {responsibilityFields}
     </div>
   );
@@ -1026,21 +1158,28 @@ export function InvoiceForm({
             ? t("invoices.form.autoNumber.assignedOnSave")
             : values.invoiceNumber.trim() || dash}
         </ReadOnlyField>
-        <ReadOnlyField label={t("invoices.form.fields.date")}>
-          {values.date ? formatInvoiceDate(values.date) : dash}
-        </ReadOnlyField>
-        <ReadOnlyField label={t("invoices.form.fields.container")}>
-          {assignedContainer
-            ? formatContainerLabel(assignedContainer)
-            : values.containerId
-              ? formatContainerIdLabel(values.containerId)
-              : dash}
-        </ReadOnlyField>
-        {showPaymentLocation ? (
-          <ReadOnlyField label={t("invoices.form.fields.paymentLocation")}>
-            {getPaymentLocationLabel(values.paymentLocation) || dash}
+        <div
+          className={cn(
+            "grid min-w-0 gap-3",
+            !isPhoneWizard && (showPaymentLocation ? "sm:grid-cols-3" : "sm:grid-cols-2"),
+          )}
+        >
+          <ReadOnlyField label={t("invoices.form.fields.date")}>
+            {values.date ? formatInvoiceDate(values.date) : dash}
           </ReadOnlyField>
-        ) : null}
+          <ReadOnlyField label={t("invoices.form.fields.container")}>
+            {assignedContainer
+              ? formatContainerLabel(assignedContainer)
+              : values.containerId
+                ? formatContainerIdLabel(values.containerId)
+                : dash}
+          </ReadOnlyField>
+          {showPaymentLocation ? (
+            <ReadOnlyField label={t("invoices.form.fields.paymentLocation")}>
+              {getPaymentLocationLabel(values.paymentLocation) || dash}
+            </ReadOnlyField>
+          ) : null}
+        </div>
         {responsibilityFields}
       </div>
     </div>

@@ -2,11 +2,11 @@
 
 import Link from "next/link";
 
-import { useMemo, useState, type ReactNode } from "react";
+import { useMemo, useState } from "react";
 import {
   FilePenLine,
+  FileText,
   Info,
-  Pencil,
   Printer,
   Receipt,
   Send,
@@ -18,14 +18,14 @@ import {
 
 import {
   TableSelectionActionsMenu,
-  TableSelectionActionItem
+  TableSelectionActionItem,
+  TableSelectionActionSeparator,
 } from "@/components/app-shell/table-selection-actions-menu";
 
 import { useAuth } from "@/lib/auth/hooks/use-auth";
 import { changeRequestHref } from "@/lib/change-requests/utils/navigation";
 
 import { InvoiceLineItemsSection } from "@/components/invoices/invoice-line-items-section";
-import { InvoiceDocumentsButton } from "@/components/invoices/invoice-documents-button";
 import { InvoiceDocumentsSection } from "@/components/invoices/invoice-documents-section";
 import { InvoiceActivitySection } from "@/components/invoices/invoice-activity-section";
 import { InvoiceBarcodeStatusSection } from "@/components/invoices/invoice-barcode-status-section";
@@ -118,37 +118,14 @@ function resolveInvoicePartyPhoneTypeLabel(
   return label?.trim() || t("phones.types.other");
 }
 
-function InvoiceSectionEditButton({
-  label,
-  onClick,
-}: {
-  label: string;
-  onClick: () => void;
-}) {
-  return (
-    <Button
-      type="button"
-      size="sm"
-      variant="ghost"
-      className="h-7 gap-1.5 px-2"
-      onClick={onClick}
-    >
-      <Pencil className="size-3.5" />
-      {label}
-    </Button>
-  );
-}
-
 function PartySection({
   title,
   party,
   icon,
-  headerAction,
 }: {
   title: string;
   party: Invoice["sender"];
   icon: LucideIcon;
-  headerAction?: ReactNode;
 }) {
   const { t } = useTranslation();
   const dash = t("common.empty.dash");
@@ -161,7 +138,7 @@ function PartySection({
   if (!name && !documentId && !email && phones.length === 0 && !address) return null;
 
   return (
-    <RecordViewSheetSection title={title} icon={icon} headerAction={headerAction}>
+    <RecordViewSheetSection title={title} icon={icon}>
       <RecordViewSheetDetailRow
         label={t("invoices.view.fields.name")}
         value={name || dash}
@@ -335,14 +312,6 @@ export function InvoiceViewSheet({
             <RecordViewSheetSection
               title={t("invoices.view.totals")}
               icon={Wallet}
-              headerAction={
-                canEdit ? (
-                  <InvoiceSectionEditButton
-                    label={t("invoices.view.actions.editTotals")}
-                    onClick={() => onEdit(invoice, { initialWizardStep: 3 })}
-                  />
-                ) : undefined
-              }
             >
               <div className="grid grid-cols-3 gap-2.5 p-4">
                 <InvoiceTotalCell
@@ -363,14 +332,6 @@ export function InvoiceViewSheet({
             <RecordViewSheetSection
               title={t("invoices.form.sections.invoiceDetails")}
               icon={Receipt}
-              headerAction={
-                canEdit ? (
-                  <InvoiceSectionEditButton
-                    label={t("invoices.view.actions.editInvoiceDetails")}
-                    onClick={() => onEdit(invoice, { initialWizardStep: 1 })}
-                  />
-                ) : undefined
-              }
             >
               <RecordViewSheetDetailRow
                 label={t("invoices.form.fields.date")}
@@ -430,42 +391,16 @@ export function InvoiceViewSheet({
               title={t("invoices.form.fields.sender")}
               party={invoice.sender}
               icon={Send}
-              headerAction={
-                canEdit ? (
-                  <InvoiceSectionEditButton
-                    label={t("invoices.form.partyActions.editSender")}
-                    onClick={() => onEdit(invoice, { initialWizardStep: 2 })}
-                  />
-                ) : undefined
-              }
             />
             {invoice.receiver ? (
               <PartySection
                 title={t("invoices.form.fields.receiver")}
                 party={invoice.receiver}
                 icon={UserRound}
-                headerAction={
-                  canEdit ? (
-                    <InvoiceSectionEditButton
-                      label={t("invoices.form.partyActions.editReceiver")}
-                      onClick={() => onEdit(invoice, { initialWizardStep: 2 })}
-                    />
-                  ) : undefined
-                }
               />
             ) : null}
 
-            <InvoiceLineItemsSection
-              lineItems={invoice.lineItems}
-              headerAction={
-                canEdit ? (
-                  <InvoiceSectionEditButton
-                    label={t("invoices.view.actions.editLineItems")}
-                    onClick={() => onEdit(invoice, { initialWizardStep: 3 })}
-                  />
-                ) : undefined
-              }
-            />
+            <InvoiceLineItemsSection lineItems={invoice.lineItems} />
 
             <InvoiceCommentsSection
               comments={invoice.comments}
@@ -509,12 +444,49 @@ export function InvoiceViewSheet({
                   ? t("invoices.wizard.actions.preparing")
                   : t("invoices.wizard.actions.print")}
               </Button>
-              <InvoiceDocumentsButton
-                invoice={invoice}
-                selectedCount={1}
-                onOpen={() => setActiveTab("documents")}
-              />
               <TableSelectionActionsMenu>
+                {canEdit ? (
+                  <>
+                    <TableSelectionActionItem
+                      onSelect={() => onEdit(invoice, { initialWizardStep: 3 })}
+                      className={tableSelectionActionMenuStyles.edit}
+                    >
+                      <Wallet className="size-4" />
+                      {t("invoices.view.actions.editTotals")}
+                    </TableSelectionActionItem>
+                    <TableSelectionActionItem
+                      onSelect={() => onEdit(invoice, { initialWizardStep: 1 })}
+                      className={tableSelectionActionMenuStyles.edit}
+                    >
+                      <Receipt className="size-4" />
+                      {t("invoices.view.actions.editInvoiceDetails")}
+                    </TableSelectionActionItem>
+                    <TableSelectionActionItem
+                      onSelect={() => onEdit(invoice, { initialWizardStep: 2 })}
+                      className={tableSelectionActionMenuStyles.edit}
+                    >
+                      <Send className="size-4" />
+                      {t("invoices.form.partyActions.editSender")}
+                    </TableSelectionActionItem>
+                    {invoice.receiver ? (
+                      <TableSelectionActionItem
+                        onSelect={() => onEdit(invoice, { initialWizardStep: 2 })}
+                        className={tableSelectionActionMenuStyles.edit}
+                      >
+                        <UserRound className="size-4" />
+                        {t("invoices.form.partyActions.editReceiver")}
+                      </TableSelectionActionItem>
+                    ) : null}
+                    <TableSelectionActionSeparator />
+                  </>
+                ) : null}
+                <TableSelectionActionItem
+                  onSelect={() => setActiveTab("documents")}
+                  className={tableSelectionActionMenuStyles.documents}
+                >
+                  <FileText className="size-4" />
+                  {t("invoices.view.actions.manageDocuments")}
+                </TableSelectionActionItem>
                 <TableSelectionActionItem
                   disabled={manageItemsDisabled}
                   onSelect={() => onManageItems(invoice)}

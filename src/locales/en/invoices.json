@@ -204,7 +204,12 @@
     }
   },
   "form": {
-    "hints": { "selfResponsibility": "Invoice responsibility defaults to your active linked employee. The payment collector is assigned separately." },
+    "hints": {
+      "pickupSourceCreator": "You are responsible for picking up this merchandise",
+      "pickupSourceSupervisor": "A supervisor is responsible for picking up this merchandise",
+      "pickupSourceRoute": "A daily route and its supervisor are responsible for picking up this merchandise",
+      "routeSupervisorAccountability": "The daily route is kept for reporting. Its supervisor is responsible for this merchandise."
+    },
     "design": {
       "backToInvoices": "Back to invoices",
       "createDescription": "Enter shipment details, confirm customers and merchandise, then review payment and totals before saving.",
@@ -226,6 +231,7 @@
       "receiver": "Receiver",
       "pickupReference": "Pickup Reference",
       "pickupReceiver": "Receiver from this pickup",
+      "responsibleParty": "Who is responsible for picking up the items in this invoice?",
       "pickupSource": "Received via",
       "pickupSourceCreator": "Me",
       "pickupSourceSupervisor": "Supervisor",
@@ -235,7 +241,8 @@
       "pickupRoute": "Daily pickup route",
       "warehouseEmployee": "Warehouse employee",
       "officeEmployee": "Office employee",
-      "supervisorEmployee": "Pickup supervisor"
+      "supervisorEmployee": "Pickup supervisor",
+      "responsibleSupervisor": "Responsible supervisor"
     },
     "placeholders": {
       "invoiceNumber": "INV-2026-0001",
@@ -575,7 +582,8 @@
     "actions": {
       "editInvoiceDetails": "Edit invoice details",
       "editLineItems": "Edit line items",
-      "editTotals": "Edit cost"
+      "editTotals": "Edit invoice cost",
+      "manageDocuments": "Manage documents"
     },
     "fields": {
       "documentId": "Doc",

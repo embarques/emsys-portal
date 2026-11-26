@@ -204,7 +204,12 @@
     }
   },
   "form": {
-    "hints": { "selfResponsibility": "La responsabilidad de la factura se asigna de forma predeterminada a tu empleado activo vinculado. El responsable del cobro se asigna por separado." },
+    "hints": {
+      "pickupSourceCreator": "Tú eres responsable de recoger esta mercancía",
+      "pickupSourceSupervisor": "Un supervisor es responsable de recoger esta mercancía",
+      "pickupSourceRoute": "Una ruta diaria y su supervisor son responsables de recoger esta mercancía",
+      "routeSupervisorAccountability": "La ruta diaria se conserva para reportes. Su supervisor es responsable de esta mercancía."
+    },
     "design": {
       "backToInvoices": "Volver a facturas",
       "createDescription": "Ingresa los datos del envío, confirma los clientes y la mercancía y revisa el pago y los totales antes de guardar.",
@@ -226,6 +231,7 @@
       "receiver": "Destinatario",
       "pickupReference": "Referencia de recogida",
       "pickupReceiver": "Destinatario de esta recogida",
+      "responsibleParty": "¿Quién es responsable de recoger los artículos de esta factura?",
       "pickupSource": "Recibido vía",
       "pickupSourceCreator": "Yo",
       "pickupSourceSupervisor": "Supervisor",
@@ -235,7 +241,8 @@
       "pickupRoute": "Ruta diaria de recogida",
       "warehouseEmployee": "Empleado de almacén",
       "officeEmployee": "Empleado de oficina",
-      "supervisorEmployee": "Supervisor de recogida"
+      "supervisorEmployee": "Supervisor de recogida",
+      "responsibleSupervisor": "Supervisor responsable"
     },
     "placeholders": {
       "invoiceNumber": "INV-2026-0001",
@@ -575,7 +582,8 @@
     "actions": {
       "editInvoiceDetails": "Editar detalles de factura",
       "editLineItems": "Editar artículos",
-      "editTotals": "Editar costo"
+      "editTotals": "Editar costo de factura",
+      "manageDocuments": "Administrar documentos"
     },
     "fields": {
       "documentId": "Doc",

@@ -23,14 +23,21 @@ export function isAutomaticSelectionFocus(element: HTMLElement | null): boolean 
   return element !== null && automaticSelectionFocus.has(element);
 }
 
+/**
+ * Mark a field so SearchableSelect / party comboboxes stay closed on this focus.
+ * Cleared on a microtask so React/cmdk focus handlers still see the marker.
+ */
+function markAutomaticSelectionFocus(element: HTMLElement) {
+  automaticSelectionFocus.add(element);
+  queueMicrotask(() => {
+    automaticSelectionFocus.delete(element);
+  });
+}
+
 /** Focus a field without opening its combobox list; typing or arrow keys open it. */
 export function focusWithoutOpeningCombobox(element: HTMLElement) {
-  automaticSelectionFocus.add(element);
-  try {
-    element.focus();
-  } finally {
-    automaticSelectionFocus.delete(element);
-  }
+  markAutomaticSelectionFocus(element);
+  element.focus();
 }
 
 function isVisible(element: HTMLElement) {
@@ -74,13 +81,9 @@ export function focusNextFormField(
   if (currentIndex === -1) return false;
 
   const nextField = fields.slice(currentIndex + 1).find((field) => {
-    if (options.suppressComboboxOpen) automaticSelectionFocus.add(field);
-    try {
-      field.focus();
-      return document.activeElement === field;
-    } finally {
-      automaticSelectionFocus.delete(field);
-    }
+    if (options.suppressComboboxOpen) markAutomaticSelectionFocus(field);
+    field.focus();
+    return document.activeElement === field;
   });
   if (!nextField) {
     const nextButton = Array.from(form.elements).find((element) =>

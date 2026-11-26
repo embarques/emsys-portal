@@ -8,7 +8,10 @@ import {
   Save,
 } from "lucide-react";
 
-import { VehicleComplianceDateCell } from "@/components/vehicles/vehicle-compliance";
+import {
+  VehicleComplianceDateCell,
+  VehicleComplianceNameCell,
+} from "@/components/vehicles/vehicle-compliance";
 import { VehicleForm } from "@/components/vehicles/vehicle-form";
 import { VehicleViewSheet } from "@/components/vehicles/vehicle-view-sheet";
 import { DataTable } from "@/components/app-shell/data-table";
@@ -288,7 +291,10 @@ export function VehiclesWorkspace() {
         id: "name",
         label: t("vehicles.columns.name"),
         cellClassName: "font-medium",
-        renderCell: (vehicle) => vehicle.name,
+        truncateCell: false,
+        renderCell: (vehicle) => (
+          <VehicleComplianceNameCell vehicle={vehicle} today={complianceToday} />
+        ),
       },
       {
         id: "vin",

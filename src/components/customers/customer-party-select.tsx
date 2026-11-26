@@ -782,7 +782,16 @@ export function CustomerPartySelect({
               }}
               onFocus={() => {
                 if (disabled) return;
-                if (isAutomaticSelectionFocus(inputRef.current)) return;
+                const active =
+                  document.activeElement instanceof HTMLElement
+                    ? document.activeElement
+                    : null;
+                if (
+                  isAutomaticSelectionFocus(inputRef.current) ||
+                  isAutomaticSelectionFocus(active)
+                ) {
+                  return;
+                }
                 selectionEditedRef.current = false;
                 setOpen(true);
               }}

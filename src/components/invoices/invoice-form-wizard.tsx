@@ -224,7 +224,9 @@ export function InvoiceFormWizard({
   }, [previewStep, step]);
 
   useEffect(() => {
-    if (!isTabActive || isMobileLayout) return;
+    // Add workflow only: edit opens mid-form (e.g. Edit sender) and must not
+    // autofocus fields or open comboboxes like pickup reference.
+    if (isEditing || !isTabActive || isMobileLayout) return;
     const timeout = window.setTimeout(() => {
       const root = wizardRef.current;
       if (!root) return;
@@ -239,7 +241,7 @@ export function InvoiceFormWizard({
       if (first) focusWithoutOpeningCombobox(first);
     }, 100);
     return () => window.clearTimeout(timeout);
-  }, [step, previewStep, isTabActive, isMobileLayout, formSessionKey, focusFieldId]);
+  }, [isEditing, step, previewStep, isTabActive, isMobileLayout, formSessionKey, focusFieldId]);
 
   useEffect(() => {
     valuesRef.current = values;

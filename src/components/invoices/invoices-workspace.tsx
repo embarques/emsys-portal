@@ -15,16 +15,19 @@ import {
   Receipt,
   RefreshCw,
   Search,
+  Send,
   Loader2,
   Tags,
+  UserRound,
+  Wallet,
 } from "lucide-react";
 
 import { InvoiceCreateWizard, InvoiceEditWizard } from "@/components/invoices/invoice-form-workspace";
 import {
   TableSelectionActionsMenu,
-  TableSelectionActionItem
+  TableSelectionActionItem,
+  TableSelectionActionSeparator,
 } from "@/components/app-shell/table-selection-actions-menu";
-import { InvoiceDocumentsButton } from "@/components/invoices/invoice-documents-button";
 import { InvoiceLineItemsCell } from "@/components/invoices/invoice-line-items-cell";
 import { InvoiceViewSheet } from "@/components/invoices/invoice-view-sheet";
 import { DataTable } from "@/components/app-shell/data-table";
@@ -604,6 +607,17 @@ export function InvoicesWorkspace() {
 
   /** Fresh tree per toolbar (mobile + desktop); do not reuse one React element. */
   function renderInvoiceSelectionActions() {
+    const singleSelected = selectedCount === 1 ? selectedInvoice : undefined;
+    const showEditActions = Boolean(singleSelected && canUpdateInvoices);
+    const showManageDocuments = Boolean(singleSelected && canViewInvoices);
+    const showManageItems =
+      canViewBarcodes &&
+      selectedCount > 0 &&
+      selectedInvoices.length === selectedCount;
+    const showRequestChange = Boolean(allowRequestChange && singleSelected);
+    const showActionsMenu =
+      showEditActions || showManageDocuments || showManageItems || showRequestChange;
+
     return (
       <>
         {canPrintInvoices ? (
@@ -631,17 +645,55 @@ export function InvoicesWorkspace() {
               : t("invoices.wizard.actions.print")}
           </Button>
         ) : null}
-        {canViewInvoices ? (
-          <InvoiceDocumentsButton
-            invoice={selectedInvoice}
-            selectedCount={selectedCount}
-            onOpen={(invoice) => openView(invoice, { documents: true })}
-          />
-        ) : null}
-        <TableSelectionActionsMenu>
-          {canViewBarcodes ? (
+        <TableSelectionActionsMenu hidden={!showActionsMenu}>
+          {showEditActions && singleSelected ? (
+            <>
+              <TableSelectionActionItem
+                onSelect={() => openEditForm(singleSelected, { initialWizardStep: 3 })}
+                className={tableSelectionActionMenuStyles.edit}
+              >
+                <Wallet className="size-4" />
+                {t("invoices.view.actions.editTotals")}
+              </TableSelectionActionItem>
+              <TableSelectionActionItem
+                onSelect={() => openEditForm(singleSelected, { initialWizardStep: 1 })}
+                className={tableSelectionActionMenuStyles.edit}
+              >
+                <Receipt className="size-4" />
+                {t("invoices.view.actions.editInvoiceDetails")}
+              </TableSelectionActionItem>
+              <TableSelectionActionItem
+                onSelect={() => openEditForm(singleSelected, { initialWizardStep: 2 })}
+                className={tableSelectionActionMenuStyles.edit}
+              >
+                <Send className="size-4" />
+                {t("invoices.form.partyActions.editSender")}
+              </TableSelectionActionItem>
+              {singleSelected.receiver ? (
+                <TableSelectionActionItem
+                  onSelect={() => openEditForm(singleSelected, { initialWizardStep: 2 })}
+                  className={tableSelectionActionMenuStyles.edit}
+                >
+                  <UserRound className="size-4" />
+                  {t("invoices.form.partyActions.editReceiver")}
+                </TableSelectionActionItem>
+              ) : null}
+              {showManageDocuments || showManageItems || showRequestChange ? (
+                <TableSelectionActionSeparator />
+              ) : null}
+            </>
+          ) : null}
+          {showManageDocuments && singleSelected ? (
             <TableSelectionActionItem
-              disabled={selectedCount === 0 || selectedInvoices.length !== selectedCount}
+              onSelect={() => openView(singleSelected, { documents: true })}
+              className={tableSelectionActionMenuStyles.documents}
+            >
+              <FileText className="size-4" />
+              {t("invoices.view.actions.manageDocuments")}
+            </TableSelectionActionItem>
+          ) : null}
+          {showManageItems ? (
+            <TableSelectionActionItem
               onSelect={() => openManageItemsFor(selectedInvoices)}
               className={tableSelectionActionMenuStyles.documents}
             >
@@ -649,12 +701,12 @@ export function InvoicesWorkspace() {
               {t("invoices.staging.tableAction")}
             </TableSelectionActionItem>
           ) : null}
-          {allowRequestChange && selectedInvoice ? (
+          {showRequestChange && singleSelected ? (
             <TableSelectionActionItem
               asChild
               className={tableSelectionActionMenuStyles.request}
             >
-              <Link href={changeRequestHref("invoice", selectedInvoice.invoiceId)}>
+              <Link href={changeRequestHref("invoice", singleSelected.invoiceId)}>
                 <FilePenLine className="size-4" />
                 {t("accounting.journalLifecycle.request")}
               </Link>
@@ -1444,7 +1496,14 @@ export function InvoicesWorkspace() {
           if (!open) setAddFormOpen(false);
         }}
       >
-        <DialogContent className={invoiceWizardDialogClassName}>
+        <DialogContent
+          className={invoiceWizardDialogClassName}
+          onOpenAutoFocus={(event) => {
+            // Let the wizard focus the first field without opening SearchableSelect lists
+            // (e.g. pickup reference on Edit sender/receiver → parties step).
+            event.preventDefault();
+          }}
+        >
           <DialogHeader className="hidden shrink-0 border-b border-border px-5 py-4 sm:block sm:px-6">
             <DialogTitle>{t("invoices.workspace.addInvoice")}</DialogTitle>
           </DialogHeader>
@@ -1463,7 +1522,14 @@ export function InvoicesWorkspace() {
           }
         }}
       >
-        <DialogContent className={invoiceWizardDialogClassName}>
+        <DialogContent
+          className={invoiceWizardDialogClassName}
+          onOpenAutoFocus={(event) => {
+            // Let the wizard focus the first field without opening SearchableSelect lists
+            // (e.g. pickup reference on Edit sender/receiver → parties step).
+            event.preventDefault();
+          }}
+        >
           <DialogHeader className="hidden shrink-0 border-b border-border px-5 py-4 sm:block sm:px-6">
             <DialogTitle>
               {editingInvoice

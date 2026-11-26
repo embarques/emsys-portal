@@ -970,7 +970,13 @@ export function BarcodesWorkspace() {
           }
         }}
       >
-        <DialogContent className={invoiceWizardDialogClassName}>
+        <DialogContent
+          className={invoiceWizardDialogClassName}
+          onOpenAutoFocus={(event) => {
+            // Wizard step autofocus opens comboboxes unless dialog focus is suppressed.
+            event.preventDefault();
+          }}
+        >
           <DialogHeader className="hidden shrink-0 border-b border-border px-5 py-4 sm:block sm:px-6">
             <DialogTitle>
               {selectedInvoiceTarget?.invoiceNumber
