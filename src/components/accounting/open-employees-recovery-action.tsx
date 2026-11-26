@@ -4,17 +4,11 @@ import { ExternalLink } from "lucide-react";
 
 import { isResponsibilityRequiredErrorMessage } from "@/lib/accounting/daily-income/journal-api-error";
 import { useAuth } from "@/lib/auth/hooks/use-auth";
-import { PERMISSIONS } from "@/lib/auth/permissions";
+import { canUseEmployeeUserLink } from "@/lib/employees/user-link";
 import { useTranslation } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
 
-export function canOpenEmployeesDirectory(
-  hasPermission: (name: string, resourceType: string) => boolean,
-): boolean {
-  return hasPermission(PERMISSIONS.employeesView.name, PERMISSIONS.employeesView.resourceType) &&
-    hasPermission(PERMISSIONS.usersView.name, PERMISSIONS.usersView.resourceType) &&
-    hasPermission(PERMISSIONS.employeeUserLink.name, PERMISSIONS.employeeUserLink.resourceType);
-}
+export const canOpenEmployeesDirectory = canUseEmployeeUserLink;
 
 function openEmployeesDirectory() {
   window.open("/employees", "_blank", "noopener,noreferrer");
