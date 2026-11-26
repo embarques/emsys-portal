@@ -136,6 +136,7 @@ type MarkerBinding = {
 };
 
 export type OrdersMapViewProps = {
+  routeEmployee?: string;
   allowRouteManagement?: boolean;
   active: boolean;
   filters: OrderFilterState;
@@ -192,6 +193,7 @@ function buildStopsBoundsLiteral(stops: PickupMapStop[]): LatLngBoundsLiteral | 
 }
 
 export function OrdersMapView({
+  routeEmployee,
   allowRouteManagement = true,
   active,
   filters,
@@ -249,7 +251,7 @@ export function OrdersMapView({
     [filters.query, filters.rows, sort],
   );
 
-  const { data, isLoading, isError } = useOrders(mapListParams, { routeMode: !allowRouteManagement });
+  const { data, isLoading, isError } = useOrders({ ...mapListParams, routeEmployee }, { routeMode: !allowRouteManagement });
   const orders = useMemo(() => data?.items ?? [], [data?.items]);
 
   const orderByRecordId = useMemo(() => {

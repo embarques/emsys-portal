@@ -42,7 +42,7 @@ export function findInvoiceWizardStep1Issue(
   values: InvoiceFormValues,
   t: Translate,
 ): InvoiceWizardIssue | null {
-  // Match step-1 visual order: number → date → container → received via.
+  // Match step-1 visual order: number → date → container → payment location → received via.
   if (!values.autoGenerateNumber && !values.invoiceNumber.trim()) {
     return {
       step: 1,
@@ -58,6 +58,13 @@ export function findInvoiceWizardStep1Issue(
       step: 1,
       fieldId: INVOICE_WIZARD_FIELDS.containerId,
       message: t("invoices.wizard.validation.containerRequired"),
+    };
+  }
+  if (!values.paymentLocation) {
+    return {
+      step: 1,
+      fieldId: INVOICE_WIZARD_FIELDS.paymentLocation,
+      message: t("invoices.wizard.validation.paymentLocationRequired"),
     };
   }
   if (values.pickupSource === "route") {
@@ -95,7 +102,6 @@ export function findInvoiceWizardStep2Issue(
 export function findInvoiceWizardStep3Issue(
   values: InvoiceFormValues,
   t: Translate,
-  options?: { requirePaymentLocation?: boolean },
 ): InvoiceWizardIssue | null {
   const contentItems = values.lineItems.filter(hasInvoiceLineItemContent);
   if (contentItems.length === 0) {
@@ -110,14 +116,6 @@ export function findInvoiceWizardStep3Issue(
       step: 3,
       fieldId: INVOICE_WIZARD_FIELDS.lineItems,
       message: t("invoices.wizard.validation.lineItemQuantityRequired"),
-    };
-  }
-  // When the payment step exists, payment location is collected there instead.
-  if (options?.requirePaymentLocation !== false && !values.paymentLocation) {
-    return {
-      step: 3,
-      fieldId: INVOICE_WIZARD_FIELDS.paymentLocation,
-      message: t("invoices.wizard.validation.paymentLocationRequired"),
     };
   }
   return null;
@@ -200,9 +198,7 @@ export function findInvoiceWizardSaveIssue(options: {
   return (
     findInvoiceWizardStep1Issue(values, t) ??
     findInvoiceWizardStep2Issue(values, t) ??
-    findInvoiceWizardStep3Issue(values, t, {
-      requirePaymentLocation: paymentStep == null,
-    }) ??
+    findInvoiceWizardStep3Issue(values, t) ??
     (requireDailyIncome && paymentStep != null
       ? findInvoiceWizardPaymentIssue(dailyIncome, t, "save", paymentStep, values)
       : null) ??

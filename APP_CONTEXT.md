@@ -128,6 +128,8 @@ Later Daily Income journals (payment / surcharge / discount) choose their own as
 
 Legacy `driver` identifies the pickup supervisor. Older clients can still supply `receivedBy` and `employee`. Historical invoices can lack pickup details. A reserved number has an assigned user (`allocation.userId`) and a device receipt timestamp (`receivedAt`). Both belong to the number handoff.
 
+The invoice detail shows Payment Status and the posted Outstanding Balance in red while open. A positive `paymentSummary.pendingClearance` appears immediately below as Balance to be cleared in yellow. This amount is the sum of unsettled receipts.
+
 ### Reserved invoice numbers
 
 Invoices → Assign invoices manages backend-generated numbers for offline mobile creation.
@@ -170,7 +172,7 @@ Barcode **status** is a manual location flag in the logistics process (where the
 
 **Default on create:** every newly created barcode / invoice line-item label should start as **`ALM-NY`**. The API should set this when status is omitted (including barcodes created with the invoice). The portal also sends `ALM-NY` when it must gap-fill a missing label so creates are never empty. Later location changes stay manual.
 
-**Barcode statuses** (`/barcode-statuses`) opens from the **Manage Barcode Statuses** header action on both the Barcodes table and Barcode Scanner, subject to the existing labels view permission. It has no separate sidebar entry. Its list, create, update, and delete UI is wired for the forthcoming barcode-status catalog API.
+**Barcode statuses** (`/barcode-statuses`) opens from the **Barcode statuses** header action on both the Barcodes table and Barcode Scanner, subject to the existing labels view permission. It has no separate sidebar entry. Its list, create, update, and delete UI is wired for the forthcoming barcode-status catalog API.
 
 **Barcodes table (Barcode Manager):**
 
@@ -283,11 +285,13 @@ This section helps coordinate the day-to-day movement of employees and merchandi
 
 Portal route: `/deliveries` (**Route Deliveries** in the Routes sidebar). This is the restricted barcode work table: **Deliver** and **Print invoice** are its only record actions. `canViewDelivery` returns all tenant pending pieces; `canViewAssignedDeliveries` returns only the authenticated employee’s assigned delivery work. The same controls apply to both scopes; the API enforces assignment isolation. The API may include pending pieces without a route or numeric delivery for broad-access users. Delivery requires a valid numeric delivery; invoice printing requires only a linked invoice. Columns include barcode, invoice, balance and its DOP equivalent, daily-route rate, merchandise, container, sender/receiver contact details, address and city. Server sorting defaults to city ascending. On phones, records become cards grouped by city when sorting by city. The status is chosen explicitly by the driver. The main **Barcodes** table also exposes permission-gated **Deliver** (pending CONDUCE pieces with invoice and numeric delivery), reusing the same delivery wizard. **Print invoice** stays on Invoices (and Route Deliveries), not Barcode Manager.
 
+Route Deliveries opens with `routeEmployee=me`. This includes the linked employee's numeric delivery crew and scheduled delivery route crew. An explicit `canViewDelivery` grant allows selecting another employee, including a route supervisor. Pieces appear in receiver city, invoice number, and barcode number order.
+
 The list comes from `GET /v1/deliveries/assigned-barcodes` and `POST /v1/deliveries/assigned-barcodes/search`; the API owns tenant, pending status, and assigned-only scope and joins invoice parties. The portal does not resolve employee membership client-side. Completion accepts `canUpdateDelivery` or `canUpdateAssignedDeliveries`, alongside the required invoice access. Contract: `docs/delivery-completion-api-contract.md`.
 
 #### Route Appointments
 
-`/route-appointments` reuses the Appointments table with the same search, filters, server pagination, viewing, editing, completion, printing and invoice creation workflows, subject to each action’s permission. Route management, deletion and standalone appointment creation are absent in this workspace, including mobile cards and detail sheets. PageHeader **View in map** opens the map for selected (or page) stops without ordering. **Reorder via map** opens one selected scheduled route so drivers can manually renumber stops and optionally run Optimize route; assignment and removal stay off. Its map (`/route-appointments/map`) is view-only unless opened for reorder. General Appointments keeps its existing controls. Both list and search use the existing pickups API: `canViewPickup` defaults to all permitted appointments; `canViewAssignedAppointments` is restricted by the API to the signed-in employee’s pickup routes. Updates accept the ordinary or assigned-appointment update grant; assigned-only writes cannot change route assignment. The UI does not filter an already downloaded page to infer assignment.
+`/route-appointments` reuses the Appointments table with the same search, filters, server pagination, viewing, editing, completion, printing and invoice creation workflows, subject to each action’s permission. Route management, deletion and standalone appointment creation are absent in this workspace, including mobile cards and detail sheets. PageHeader **View in map** opens the map for selected (or page) stops without ordering. **Reorder via map** opens one selected scheduled route so drivers can manually renumber stops and optionally run Optimize route; assignment and removal stay off. Its map (`/route-appointments/map`) is view-only unless opened for reorder. General Appointments keeps its existing controls. Both list and search on Route Appointments send `routeEmployee=me` to select the authenticated user's active linked employee. Users with the explicit `canViewPickup` grant can select another employee or route supervisor. The default order groups daily routes and follows their saved stop numbers, with appointment ID as the tie breaker. General Appointments keeps its ordinary list scope. Updates accept the ordinary or assigned-appointment update grant; assigned-only writes cannot change route assignment. The UI does not filter an already downloaded page to infer assignment.
 
 **Deliver** is an invoice-level logistics operation scoped to the selected
 route/delivery and its pending merchandise pieces, including pieces beyond the

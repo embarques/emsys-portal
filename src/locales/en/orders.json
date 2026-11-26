@@ -1,4 +1,6 @@
 {
+  "myRouteWork": "My assigned work",
+  "routeWorkEmployee": "Assigned employee or route supervisor",
   "entity": "Appointment",
   "entityPlural": "appointments",
   "title": "Appointments",

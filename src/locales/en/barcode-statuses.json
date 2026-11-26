@@ -37,5 +37,9 @@
     }
   },
   "searchPlaceholder": "Search statuses…",
-  "entities": "barcode statuses"
+  "entities": "barcode statuses",
+  "view": {
+    "details": "Details",
+    "edit": "Edit status"
+  }
 }

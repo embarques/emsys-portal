@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { ClipboardList } from "lucide-react";
 
 import { RecordViewSheetSection } from "@/components/app-shell/record-view-sheet";
@@ -22,7 +23,15 @@ function isFilled(value: string | undefined): boolean {
   return trimmed !== "" && trimmed !== "—" && trimmed !== "-";
 }
 
-export function InvoiceLineItemsSection({ lineItems }: { lineItems: readonly InvoiceLineItem[] }) {
+type InvoiceLineItemsSectionProps = {
+  lineItems: readonly InvoiceLineItem[];
+  headerAction?: ReactNode;
+};
+
+export function InvoiceLineItemsSection({
+  lineItems,
+  headerAction,
+}: InvoiceLineItemsSectionProps) {
   const { t } = useTranslation();
   const empty = t("common.empty.dash");
 
@@ -30,6 +39,7 @@ export function InvoiceLineItemsSection({ lineItems }: { lineItems: readonly Inv
     <RecordViewSheetSection
       title={t("invoices.wizard.review.lineItems")}
       icon={ClipboardList}
+      headerAction={headerAction}
     >
       {lineItems.length === 0 ? (
         <p className="p-4 text-sm text-muted-foreground">{t("invoices.wizard.review.noLineItems")}</p>

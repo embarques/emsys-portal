@@ -12,16 +12,16 @@ export type DeliverTarget = Pick<Barcode, "invoiceId" | "invoiceNumber" | "barco
 };
 
 export function useDeliveryAccess() {
-  const { hasPermission, isAuthenticated, user, email } = useAuth();
+  const { hasPermission, isAuthenticated, user, email, permissions } = useAuth();
   const companyId = useAppSelector((state) => state.auth.companyId);
   const has = (permission: Permission) => hasPermission(permission.name, permission.resourceType);
   const session = isAuthenticated && Boolean(companyId);
   return {
     companyId,
     actorId: user?.uid || email || "",
-    viewScope: has(PERMISSIONS.deliveriesView) ? "all" : "assigned",
+    viewScope: permissions.some((p) => p.name === PERMISSIONS.deliveriesView.name && p.resourceType === PERMISSIONS.deliveriesView.resourceType) ? "all" : "assigned",
     canPrint: session && has(PERMISSIONS.invoicesPrint),
-    canList: session && has(PERMISSIONS.routeDeliveriesView),
+    canList: session && (has(PERMISSIONS.routeDeliveriesView) || has(PERMISSIONS.deliveriesView)),
     // Status changes and delivery documents are written on the invoice.
     canDeliver: session
       && (has(PERMISSIONS.deliveriesUpdate) || has(PERMISSIONS.routeDeliveriesUpdate))

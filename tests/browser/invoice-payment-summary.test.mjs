@@ -69,128 +69,52 @@ const cellAmount = (page, label) => page.evaluate(label => {
   return heading?.nextElementSibling?.textContent?.trim() ?? null;
 }, label);
 
-/** Reads the amount the clearance breakdown shows for the row starting with a label. */
-const breakdownAmount = (page, label) => page.evaluate(label => {
-  const term = [...document.querySelectorAll("dt")].find(node => node.textContent?.trim().startsWith(label));
-  return term?.nextElementSibling?.textContent?.trim() ?? null;
-}, label);
+const rowValue = (page, label) => page.getByText(label, { exact: true }).locator("..").locator(":scope > span").last();
 
-/** Reads the full label of a breakdown row, including its payment count. */
-const breakdownLabel = (page, label) => page.evaluate(label => {
-  const term = [...document.querySelectorAll("dt")].find(node => node.textContent?.trim().startsWith(label));
-  return term?.textContent?.replace(/\s+/g, " ").trim() ?? null;
-}, label);
-
-test("the money grid reports posted figures that reconcile with the charge", async () => {
+test("an open invoice shows posted balance and the receipts awaiting clearance in order", async () => {
   const page = await fixture({ paymentSummary: PARTIALLY_CLEARED });
   try {
-    await page.getByText("Outstanding Balance", { exact: true }).waitFor();
-    // 1,000 charged less 300 cleared leaves 700 posted; pending checks are
-    // reported separately rather than folded into these figures.
     assert.equal(await cellAmount(page, "Cost"), "$1,000.00");
     assert.equal(await cellAmount(page, "Total Paid"), "−$300.00");
-    assert.equal(await cellAmount(page, "Outstanding Balance"), "$700.00");
-  } finally {
-    await page.close();
-  }
+    assert.equal(await rowValue(page, "Payment Status").innerText(), "Open");
+    assert.equal(await rowValue(page, "Outstanding Balance").innerText(), "$700.00");
+    assert.equal(await rowValue(page, "Balance to be cleared").innerText(), "$250.00");
+    const status = await page.getByText("Payment Status", { exact: true }).boundingBox();
+    const outstanding = await page.getByText("Outstanding Balance", { exact: true }).boundingBox();
+    const pending = await page.getByText("Balance to be cleared", { exact: true }).boundingBox();
+    assert.ok(status.y < outstanding.y && outstanding.y < pending.y);
+    assert.equal(await page.getByText("Payment Clearance", { exact: true }).count(), 0);
+  } finally { await page.close(); }
 });
 
-test("several pending payments are totalled and counted with the balance after clearing", async () => {
-  const page = await fixture({ paymentSummary: PARTIALLY_CLEARED });
+test("a fully pending receipt keeps the invoice open until it posts", async () => {
+  const page = await fixture({ payment: 0, balance: 1000, paymentSummary: {
+    ...PARTIALLY_CLEARED, totalPaid: 0, outstandingBalance: 1000, pendingClearance: 1000,
+    balanceAfterClearance: 0, customerStatus: "PAID", clearanceStatus: "OUTSTANDING",
+  } });
   try {
-    await page.getByText("Payments waiting to clear", { exact: true }).waitFor();
-    assert.equal(await breakdownAmount(page, "Total waiting to clear"), "$250.00");
-    assert.equal(await breakdownLabel(page, "Total waiting to clear"), "Total waiting to clear · 2 payments");
-    assert.equal(await breakdownAmount(page, "Balance after clearing"), "$450.00");
-    assert.ok(await page.getByText(/received from the client but have not cleared yet/).isVisible());
-  } finally {
-    await page.close();
-  }
+    assert.equal(await rowValue(page, "Payment Status").innerText(), "Open");
+    assert.equal(await rowValue(page, "Outstanding Balance").innerText(), "$1,000.00");
+    assert.equal(await rowValue(page, "Balance to be cleared").innerText(), "$1,000.00");
+  } finally { await page.close(); }
 });
 
-test("a single pending payment uses the singular count", async () => {
-  const page = await fixture({ paymentSummary: { ...PARTIALLY_CLEARED, pendingClearance: 100, pendingClearanceCount: 1, balanceAfterClearance: 600 } });
-  try {
-    await page.getByText("Payments waiting to clear", { exact: true }).waitFor();
-    assert.equal(await breakdownLabel(page, "Total waiting to clear"), "Total waiting to clear · 1 payment");
-    assert.equal(await breakdownAmount(page, "Balance after clearing"), "$600.00");
-  } finally {
-    await page.close();
-  }
-});
-
-test("client payment and payment clearance read as separate statuses", async () => {
-  const page = await fixture({ paymentSummary: PARTIALLY_CLEARED });
-  try {
-    await page.getByText("Client Payment", { exact: true }).waitFor();
-    await page.getByText("Payment Clearance", { exact: true }).waitFor();
-    await page.getByText("Partially paid", { exact: true }).waitFor();
-    await page.getByText("Partially cleared", { exact: true }).waitFor();
-    // The posted-balance status row is unchanged.
-    await page.getByText("Payment Status", { exact: true }).waitFor();
-    await page.getByText("Open", { exact: true }).waitFor();
-  } finally {
-    await page.close();
-  }
-});
-
-test("a fully pending check keeps the posted balance and clears to zero", async () => {
-  const page = await fixture({
-    payment: 0, balance: 1000,
-    paymentSummary: { ...PARTIALLY_CLEARED, totalPaid: 0, outstandingBalance: 1000, pendingClearance: 1000, pendingClearanceCount: 1, balanceAfterClearance: 0, customerStatus: "PAID", clearanceStatus: "OUTSTANDING" },
+for (const [status, balance] of [["OPEN", 300], ["CLOSED", 0]]) {
+  test(`legacy ${status} invoice uses stored balance and omits pending row`, async () => {
+    const page = await fixture({ paidStatus: status, balance, paymentSummary: undefined });
+    try {
+      assert.equal(await rowValue(page, "Outstanding Balance").innerText(), `$${balance}.00`);
+      assert.equal(await page.getByText("Balance to be cleared", { exact: true }).count(), 0);
+    } finally { await page.close(); }
   });
-  try {
-    await page.getByText("Paid", { exact: true }).waitFor();
-    assert.equal(await cellAmount(page, "Total Paid"), "$0.00");
-    assert.equal(await cellAmount(page, "Outstanding Balance"), "$1,000.00");
-    assert.equal(await breakdownAmount(page, "Total waiting to clear"), "$1,000.00");
-    assert.equal(await breakdownAmount(page, "Balance after clearing"), "$0.00");
-  } finally {
-    await page.close();
-  }
-});
+}
 
-test("an invoice with no pending clearance hides the breakdown entirely", async () => {
-  const page = await fixture({
-    payment: 1000, balance: 0, paidStatus: "CLOSED",
-    paymentSummary: { ...PARTIALLY_CLEARED, totalPaid: 1000, outstandingBalance: 0, pendingClearance: 0, pendingClearanceCount: 0, balanceAfterClearance: 0, customerStatus: "PAID", clearanceStatus: "CLEARED" },
-  });
-  try {
-    await page.getByText("Outstanding Balance", { exact: true }).waitFor();
-    assert.equal(await page.getByText("Payments waiting to clear", { exact: true }).count(), 0);
-    assert.equal(await page.getByText("Balance after clearing", { exact: true }).count(), 0);
-    await page.getByText("Cleared", { exact: true }).waitFor();
-  } finally {
-    await page.close();
-  }
-});
-
-test("an API response without the summary renders the stored totals and no pending amount", async () => {
-  const page = await fixture({ payment: 200, balance: 300, paymentSummary: undefined });
-  try {
-    await page.getByText("Outstanding Balance", { exact: true }).waitFor();
-    assert.equal(await cellAmount(page, "Total Paid"), "−$200.00");
-    assert.equal(await cellAmount(page, "Outstanding Balance"), "$300.00");
-    assert.equal(await page.getByText("Payments waiting to clear", { exact: true }).count(), 0);
-  } finally {
-    await page.close();
-  }
-});
-
-test("Spanish renders translated payment clearance copy", async () => {
+test("Spanish distinguishes the posted and pending amounts", async () => {
   const page = await fixture({ locale: "es", paymentSummary: PARTIALLY_CLEARED });
   try {
-    await page.getByText("Total pagado", { exact: true }).waitFor();
-    await page.getByText("Saldo pendiente", { exact: true }).waitFor();
-    await page.getByText("Pagos por compensar", { exact: true }).waitFor();
-    assert.equal(await breakdownLabel(page, "Total por compensar"), "Total por compensar · 2 pagos");
-    assert.equal(await breakdownAmount(page, "Saldo después de compensar"), "$450.00");
-    await page.getByText("Pago del cliente", { exact: true }).waitFor();
-    await page.getByText("Compensación parcial", { exact: true }).waitFor();
-    assert.ok(await page.getByText(/aún no se han compensado/).isVisible());
-  } finally {
-    await page.close();
-  }
+    assert.equal(await rowValue(page, "Saldo pendiente").innerText(), "$700.00");
+    assert.equal(await rowValue(page, "Saldo por compensar").innerText(), "$250.00");
+  } finally { await page.close(); }
 });
 
 test("an invoice with accounting entries offers Delete disabled and says to void it", async () => {

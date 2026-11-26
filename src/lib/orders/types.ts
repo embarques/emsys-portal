@@ -254,6 +254,7 @@ export type OrderListParams = {
   filterRows?: TableFilterRowState[];
   /** Route Appointments: only pickups on a scheduled route; the search bar covers every text column. */
   assignedRouteOnly?: boolean;
+  routeEmployee?: string;
 };
 
 /** Optional sort for pickups list/search when explicitly requested. */

@@ -363,7 +363,6 @@
     "actions": {
       "back": "Atrás",
       "print": "Imprimir",
-      "printInvoice": "Imprimir factura",
       "preparing": "Preparando…"
     },
     "validation": {
@@ -568,8 +567,16 @@
     }
   },
   "view": {
+    "tabs": "Vistas de factura",
+    "tracking": "Seguimiento",
+    "totals": "Totales",
     "system": "Sistema",
     "pickupAssignment": "Supervisor de recogida",
+    "actions": {
+      "editInvoiceDetails": "Editar detalles de factura",
+      "editLineItems": "Editar artículos",
+      "editTotals": "Editar costo"
+    },
     "fields": {
       "documentId": "Doc",
       "phones": "Teléfonos",
@@ -590,6 +597,7 @@
       "pendingPaymentCount_one": "{{count}} pago",
       "pendingPaymentCount_other": "{{count}} pagos",
       "balanceAfterClearance": "Saldo después de compensar",
+      "balanceToClear": "Saldo por compensar",
       "pendingClearanceHint": "Estos pagos se recibieron del cliente pero aún no se han compensado. El saldo pendiente de arriba es el saldo contabilizado; bajará al saldo después de compensar cuando se compensen.",
       "clientUnpaid": "Sin pagar",
       "clientPartiallyPaid": "Pago parcial",

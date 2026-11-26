@@ -58,7 +58,11 @@ import {
 import { useEnsureCustomerDetail } from "@/lib/customers/hooks/use-customers";
 import { CUSTOMER_TYPE_RECEIVER, CUSTOMER_TYPE_SENDER, coreAddressHasContent, customerHasUnverifiedPrimaryAddress, getCustomerPrimaryCoreAddress, type Customer } from "@/lib/customers/types";
 import { formatContainerIdLabel, formatContainerLabel } from "@/lib/containers/display";
-import { formatInvoiceDate, formatInvoiceMoney } from "@/lib/invoices/display";
+import {
+  formatInvoiceDate,
+  formatInvoiceMoney,
+  getPaymentLocationLabel,
+} from "@/lib/invoices/display";
 import { INVOICE_WIZARD_FIELDS } from "@/lib/invoices/invoice-wizard-validation";
 import { getPrimaryPhoneDisplayNumber } from "@/lib/phones/phones";
 import { buildTransactionAssigneeOptions, resolveDailyRouteSupervisor } from "@/lib/accounting/daily-income/assignee";
@@ -119,8 +123,9 @@ type InvoiceFormProps = {
   appearance?: "default" | "wizard" | "phoneWizard";
   showFooter?: boolean;
   /**
-   * Ask where the invoice will be paid (below line items in the non-wizard /
-   * edit form). Create wizards with a payment step collect this there instead.
+   * Ask where the invoice will be paid on the invoice-details step (step 1 /
+   * details section). Daily-income wizards may still show the same field on
+   * the payment step for convenience.
    */
   showPaymentLocation?: boolean;
   onValuesChange?: (values: InvoiceFormValues) => void;
@@ -941,6 +946,30 @@ export function InvoiceForm({
     </>
   );
 
+  const paymentLocationField = showPaymentLocation
+    ? renderField(
+        t("invoices.form.fields.paymentLocation"),
+        "paymentLocation",
+        true,
+        <SearchableSelect
+          id="paymentLocation"
+          value={mapPaymentLocationToPaidRegion(values.paymentLocation)}
+          onValueChange={(next) =>
+            updateField("paymentLocation", next as InvoiceFormValues["paymentLocation"])
+          }
+          placeholder={t("invoices.form.placeholders.selectPaymentLocation")}
+          searchPlaceholder={t("invoices.form.placeholders.searchPaymentLocations")}
+          {...(isWizard ? wizardSelectFieldProps(values.paymentLocation) : {})}
+          required
+          loading={branchesLoading}
+          options={branches.filter((branch) => branch.code.trim()).map((branch) => ({
+            value: branch.code.trim().toUpperCase(),
+            label: branch.code.trim().toUpperCase(),
+          }))}
+        />,
+      )
+    : null;
+
   const detailsFields = (
     <div className="grid min-w-0 grid-cols-1 gap-4">
       {invoiceNumberField}
@@ -979,33 +1008,10 @@ export function InvoiceForm({
         undefined,
         <FieldEntityActions onAdd={openAddContainer} addIcon={ContainerIcon} />,
       )}
+      {paymentLocationField}
       {responsibilityFields}
     </div>
   );
-
-  const paymentLocationField = showPaymentLocation
-    ? renderField(
-        t("invoices.form.fields.paymentLocation"),
-        "paymentLocation",
-        true,
-        <SearchableSelect
-          id="paymentLocation"
-          value={mapPaymentLocationToPaidRegion(values.paymentLocation)}
-          onValueChange={(next) =>
-            updateField("paymentLocation", next as InvoiceFormValues["paymentLocation"])
-          }
-          placeholder={t("invoices.form.placeholders.selectPaymentLocation")}
-          searchPlaceholder={t("invoices.form.placeholders.searchPaymentLocations")}
-          {...(isWizard ? wizardSelectFieldProps(values.paymentLocation) : {})}
-          required
-          loading={branchesLoading}
-          options={branches.filter((branch) => branch.code.trim()).map((branch) => ({
-            value: branch.code.trim().toUpperCase(),
-            label: branch.code.trim().toUpperCase(),
-          }))}
-        />,
-      )
-    : null;
 
   const dash = t("common.empty.dash");
   const assignedContainer = containers.find((container) => String(container.id) === values.containerId);
@@ -1030,6 +1036,11 @@ export function InvoiceForm({
               ? formatContainerIdLabel(values.containerId)
               : dash}
         </ReadOnlyField>
+        {showPaymentLocation ? (
+          <ReadOnlyField label={t("invoices.form.fields.paymentLocation")}>
+            {getPaymentLocationLabel(values.paymentLocation) || dash}
+          </ReadOnlyField>
+        ) : null}
         {responsibilityFields}
       </div>
     </div>
@@ -1249,11 +1260,6 @@ export function InvoiceForm({
                     requestEditLineItemId={requestEditLineItemId}
                   />
                 </div>
-                {paymentLocationField ? (
-                  <div className={isPhoneWizard ? undefined : "min-w-0 rounded-xl border border-border bg-card p-5 shadow-sm"}>
-                    {paymentLocationField}
-                  </div>
-                ) : null}
               </>
             ) : (
               <FormSection variant="card" description={t("invoices.form.design.itemsHint")} icon={ClipboardList} title={t("invoices.form.sections.description")}>
@@ -1262,7 +1268,6 @@ export function InvoiceForm({
                   catalogItems={catalogItems}
                   onChange={(lineItems) => updateField("lineItems", lineItems)}
                 />
-                {paymentLocationField}
               </FormSection>
             )
           ) : null}

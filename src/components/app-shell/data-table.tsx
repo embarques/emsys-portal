@@ -539,7 +539,7 @@ function DataTableContent<T>({
                   }
                   style={{ width }}
                   className={cn(
-                    "group relative cursor-grab select-none text-left active:cursor-grabbing",
+                    "group relative cursor-grab select-none align-middle text-left active:cursor-grabbing",
                     headerCellPaddingClassName,
                     isCompact && "border-b border-border bg-muted font-medium",
                     column.headerClassName,
@@ -715,7 +715,6 @@ function DataTableContent<T>({
                       style={{ width: getDisplayColumnWidth(column.id) }}
                       className={cn(
                         bodyCellPaddingClassName,
-                        isCompact ? "align-middle" : "align-top",
                         UNIFORM_PILL_CELL_CLASSNAME,
                         shouldTruncate || keepSingleLine
                           ? "overflow-hidden"
@@ -728,6 +727,8 @@ function DataTableContent<T>({
                           isCompact &&
                           "overflow-visible whitespace-normal break-words [&_:where(p,div,span)]:whitespace-normal",
                         isLeadingColumn && leadingColumnPaddingClassName,
+                        // Always vertical-middle so mixed cell content shares one row baseline.
+                        "align-middle",
                       )}
                       onClick={column.stopRowClick ? (event) => event.stopPropagation() : undefined}
                       title={

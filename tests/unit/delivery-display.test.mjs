@@ -11,18 +11,22 @@ const require=createRequire(import.meta.url);
 const root=path.resolve(import.meta.dirname,"../..");
 const invoiceId="68f800000000000000000001";
 const row={id:1,barcodeId:"65f000000000000000000001",number:"BARCODE-1",invoiceId,invoiceNumber:"000123",description:"Box",routeRate:61.25,status:{id:6,name:"CONDUCE"},container:{name:"Container"},route:{id:"route-1",name:"Santiago 1"},receiver:{name:"Receiver",province:"Santiago",address1:"Calle 1",apartment:"",city:"Santiago",zipcode:"",phones:[]}};
+function tableCells(html) {
+ return Array.from(html.matchAll(/<td\b[^>]*>(.*?)<\/td>/gs), match => match[1].replace(/<[^>]+>/g, "").trim());
+}
 function loadComponent(relative){
  const cache=new Map();
  const block=({children})=>React.createElement("div",null,children);
  const stubs={
+  "@/components/pickup-delivery-routes/route-worklist":{RouteWorklist:({children})=>children("me")},
   "@/components/deliveries/delivery-balance-amount":{DeliveryRowBalance:()=>null},
   "@/components/phones/table-phone-cell":{TablePhoneCell:()=>null},
-  "@/lib/i18n":{useTranslation:()=>({t:(key)=>({"deliveries.columns.invoice":"Invoice #","deliveries.columns.status":"Status"}[key]??key)})},
+  "@/lib/i18n":{useTranslation:()=>({t:(key)=>({"deliveries.columns.city":"City","deliveries.columns.invoice":"Invoice #","deliveries.columns.status":"Status"}[key]??key)})},
   "@/lib/deliveries/hooks/use-deliver-invoice":{useDeliveryAccess:()=>({canList:true,canDeliver:false,canPrint:false,companyId:"company",actorId:"actor"})},
-  "@/lib/table/hooks/use-catalog-table":{useCatalogTable:({defaultSort})=>({items:[row],total:1,isLoading:false,isError:false,hasActiveFilters:false,sort:defaultSort,onSortChange:()=>{},selection:{selectedIds:[],selectedRows:[],pageRowIds:[],allPageSelected:false,setSelectedIds:()=>{},toggle:()=>{},toggleAll:()=>{}}})},
+  "@/lib/table/hooks/use-catalog-table":{useCatalogTable:({defaultSort})=>({items:[row],total:1,isLoading:false,isError:false,hasActiveFilters:false,sort:defaultSort,pagination:{page:1},onSortChange:()=>{},selection:{selectedIds:[],selectedRows:[],pageRowIds:[],allPageSelected:false,setSelectedIds:()=>{},toggle:()=>{},toggleAll:()=>{}}})},
   "@/components/app-shell/catalog-table-toolbar":{CatalogTablePagination:()=>null,CatalogTableToolbar:()=>null},
   "@/components/app-shell/page-header":{PageHeader:()=>null},
-  "@/components/ui/card":{Card:block,CardHeader:block},
+  "@/components/ui/card":{Card:block,CardHeader:block,CardContent:block},
   "@/components/ui/button":{Button:({children,...props})=>React.createElement("button",props,children)},
   "@/lib/api/axios":{normalizeApiError:()=>({message:"error"})},
   "@/lib/deliveries/api/assigned-deliveries-api":{fetchAssignedDeliveryBarcodesPage:()=>{}},
@@ -36,8 +40,19 @@ function loadComponent(relative){
  function load(filename){
   if(cache.has(filename))return cache.get(filename).exports;
   const loadedModule={exports:{}};cache.set(filename,loadedModule);
-  const output=ts.transpileModule(fs.readFileSync(filename,"utf8"),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2020,jsx:ts.JsxEmit.ReactJSX,esModuleInterop:true}}).outputText;
-  function resolve(name){if(stubs[name])return stubs[name];if(name.startsWith("@/")){const base=path.join(root,"src",name.slice(2));return load(fs.existsSync(base+".ts")?base+".ts":base+".tsx");}return require(name);}
+  const output=ts.transpileModule(fs.readFileSync(filename,"utf8"),{fileName:filename,compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2020,jsx:ts.JsxEmit.ReactJSX,esModuleInterop:true}}).outputText;
+  function resolve(name) {
+    if (name === "@/components/app-shell/catalog-table-toolbar") {
+      return { ...load(path.join(root, "src/components/app-shell/catalog-table-toolbar.tsx")), ...stubs[name] };
+    }
+    if (stubs[name]) return stubs[name];
+    if (name.startsWith("@/") || name.startsWith(".")) {
+      const base = name.startsWith("@/") ? path.join(root, "src", name.slice(2)) : path.resolve(path.dirname(filename), name);
+      if (base.endsWith(".json")) return require(base);
+      return load(fs.existsSync(base + ".ts") ? base + ".ts" : base + ".tsx");
+    }
+    return require(name);
+  }
   new Function("require","module","exports",output)(resolve,loadedModule,loadedModule.exports);return loadedModule.exports;
  }
  return load(path.join(root,relative));
@@ -48,10 +63,10 @@ test("desktop and mobile delivery rows show the business invoice number and omit
  const html=renderToStaticMarkup(React.createElement(DeliveriesWorkspace));
  assert.match(html,/Invoice #/);
  assert.match(html,/>000123</);
- assert.match(html,/<td[^>]*>61[.,]25<\/td>/);
+ assert.ok(tableCells(html).some(text => /^61[.,]25$/.test(text)));
  assert.match(html,/<dd[^>]*>61[.,]25<\/dd>/);
  assert.match(html,/deliveries\.columns\.route/);
- assert.match(html,/<td[^>]*>Santiago 1<\/td>/);
+ assert.ok(tableCells(html).includes("Santiago 1"));
  assert.match(html,/<dd[^>]*>Santiago 1<\/dd>/);
  assert.doesNotMatch(html,/CONDUCE|>Status</);
  assert.doesNotMatch(html,new RegExp(invoiceId));
@@ -78,17 +93,17 @@ test("an unavailable route rate displays a dash rather than zero",()=>{
 
 test("deliveries default to city sorting and render city rather than province in the list", () => {
  const {DEFAULT_ASSIGNED_DELIVERY_SORT}=loadComponent("src/lib/deliveries/types.ts");
- assert.equal(DEFAULT_ASSIGNED_DELIVERY_SORT,"receiver.address.city:asc");
+ assert.equal(DEFAULT_ASSIGNED_DELIVERY_SORT,"receiver.address.city:asc,invoice.number:asc,number:asc");
  const original=row.receiver;
  row.receiver={...original,city:"CITY ONLY",province:"PROVINCE ONLY"};
  try {
   const {DeliveriesWorkspace}=loadComponent("src/components/deliveries/deliveries-workspace.tsx");
   const html=renderToStaticMarkup(React.createElement(DeliveriesWorkspace));
-  assert.match(html,/>CITY ONLY<\/td>/);
+  assert.ok(tableCells(html).includes("CITY ONLY"));
   assert.match(html,/>CITY ONLY<\/h3>/);
-  assert.doesNotMatch(html,/>PROVINCE ONLY<\/td>/);
+  assert.ok(!tableCells(html).includes("PROVINCE ONLY"));
   assert.doesNotMatch(html,/<select/);
-  assert.match(html,/aria-sort="ascending"><button[^>]*>deliveries\.columns\.city</);
+  assert.match(html, /<th\b[^>]*aria-sort="ascending"[^>]*>(?:(?!<\/th>)[\s\S])*?>City</);
   assert.equal(html.match(/aria-sort="/g)?.length,13,"every Route Deliveries column is sortable");
  } finally {row.receiver=original;}
 });

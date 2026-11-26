@@ -37,5 +37,9 @@
     }
   },
   "searchPlaceholder": "Buscar estados…",
-  "entities": "estados de código de barras"
+  "entities": "estados de código de barras",
+  "view": {
+    "details": "Detalles",
+    "edit": "Editar estado"
+  }
 }

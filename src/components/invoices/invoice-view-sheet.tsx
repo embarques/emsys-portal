@@ -2,16 +2,17 @@
 
 import Link from "next/link";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import {
-  Clock3,
   FilePenLine,
   Info,
+  Pencil,
   Printer,
   Receipt,
   Send,
   Tags,
   UserRound,
+  Wallet,
   type LucideIcon,
 } from "lucide-react";
 
@@ -24,6 +25,7 @@ import { useAuth } from "@/lib/auth/hooks/use-auth";
 import { changeRequestHref } from "@/lib/change-requests/utils/navigation";
 
 import { InvoiceLineItemsSection } from "@/components/invoices/invoice-line-items-section";
+import { InvoiceDocumentsButton } from "@/components/invoices/invoice-documents-button";
 import { InvoiceDocumentsSection } from "@/components/invoices/invoice-documents-section";
 import { InvoiceActivitySection } from "@/components/invoices/invoice-activity-section";
 import { InvoiceBarcodeStatusSection } from "@/components/invoices/invoice-barcode-status-section";
@@ -53,10 +55,6 @@ import { formatOrderDateWithWeekday } from "@/lib/orders/display";
 import {
   formatInvoiceMoney,
   getContainerLabelForInvoice,
-  getInvoiceClearanceBadgeClass,
-  getInvoiceClearanceLabel,
-  getInvoiceCustomerPaymentBadgeClass,
-  getInvoiceCustomerPaymentLabel,
   getInvoicePaidStatusLabel,
   getInvoicePartyCoreAddress,
   getInvoiceSubtotal,
@@ -66,18 +64,24 @@ import {
 import {
   resolveInvoicePaymentSummary,
   type Invoice,
-  type InvoicePaymentSummary,
 } from "@/lib/invoices/types";
-import type { TranslateFn } from "@/lib/feedback/messages";
 import { useTranslation } from "@/lib/i18n";
+import { RECORD_PHONE_TYPE_OPTIONS, type RecordPhoneType } from "@/lib/phones/types";
 import { cn } from "@/lib/utils";
+
+type InvoiceViewTab = "overview" | "documents" | "tracking";
+
+type InvoiceViewEditOptions = {
+  /** Land on this invoice wizard step (1 = details, 2 = parties, 3 = line items / totals). */
+  initialWizardStep?: number;
+};
 
 type InvoiceViewSheetProps = {
   invoice: Invoice | null;
-  initialTab?: "overview" | "documents";
+  initialTab?: InvoiceViewTab;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onEdit: (invoice: Invoice) => void;
+  onEdit: (invoice: Invoice, options?: InvoiceViewEditOptions) => void;
   onDelete: (invoice: Invoice) => void;
   canEdit?: boolean;
   canDelete?: boolean;
@@ -99,14 +103,52 @@ function getOrderedPartyPhones(phones: Invoice["sender"]["phones"]) {
   ];
 }
 
+const PHONE_TYPE_VALUES = new Set<string>(
+  RECORD_PHONE_TYPE_OPTIONS.map((option) => option.value),
+);
+
+function resolveInvoicePartyPhoneTypeLabel(
+  label: string | undefined,
+  t: (key: string) => string,
+): string {
+  const normalized = label?.trim().toLowerCase() ?? "";
+  if (PHONE_TYPE_VALUES.has(normalized)) {
+    return t(`phones.types.${normalized as RecordPhoneType}`);
+  }
+  return label?.trim() || t("phones.types.other");
+}
+
+function InvoiceSectionEditButton({
+  label,
+  onClick,
+}: {
+  label: string;
+  onClick: () => void;
+}) {
+  return (
+    <Button
+      type="button"
+      size="sm"
+      variant="ghost"
+      className="h-7 gap-1.5 px-2"
+      onClick={onClick}
+    >
+      <Pencil className="size-3.5" />
+      {label}
+    </Button>
+  );
+}
+
 function PartySection({
   title,
   party,
   icon,
+  headerAction,
 }: {
   title: string;
   party: Invoice["sender"];
   icon: LucideIcon;
+  headerAction?: ReactNode;
 }) {
   const { t } = useTranslation();
   const dash = t("common.empty.dash");
@@ -119,15 +161,20 @@ function PartySection({
   if (!name && !documentId && !email && phones.length === 0 && !address) return null;
 
   return (
-    <RecordViewSheetSection title={title} icon={icon}>
+    <RecordViewSheetSection title={title} icon={icon} headerAction={headerAction}>
       <RecordViewSheetDetailRow
         label={t("invoices.view.fields.name")}
         value={name || dash}
+        layout="stacked"
       />
       {address ? (
         <AddressActionRow label={t("invoices.view.fields.address")} address={address} />
       ) : (
-        <RecordViewSheetDetailRow label={t("invoices.view.fields.address")} value={dash} />
+        <RecordViewSheetDetailRow
+          label={t("invoices.view.fields.address")}
+          value={dash}
+          layout="stacked"
+        />
       )}
       <RecordViewSheetDetailRow
         label={t("invoices.view.fields.documentId")}
@@ -143,7 +190,7 @@ function PartySection({
         phones.map((phone, index) => (
           <PhoneActionRow
             key={`${title}-phone-${index}`}
-            label={phone.label?.trim() || t("phones.types.other")}
+            label={resolveInvoicePartyPhoneTypeLabel(phone.label, t)}
             number={phone.number}
             displayNumber={phone.displayNumber}
             isPrimary={Boolean(phone.isPrimary)}
@@ -166,98 +213,22 @@ function InvoiceTotalCell({
 }: {
   label: string;
   value: string;
-  tone?: "default" | "positive" | "balance";
+  tone?: "default" | "positive";
 }) {
-  const isBalance = tone === "balance";
-
   return (
-    <div
-      className={cn(
-        "rounded-lg border px-3 py-2.5",
-        isBalance
-          ? "border-primary/40 bg-primary/10"
-          : "border-border/60 bg-background",
-      )}
-    >
-      <p
-        className={cn(
-          "text-[10px] font-semibold uppercase tracking-wider",
-          isBalance ? "text-primary/80" : "text-muted-foreground",
-        )}
-      >
+    <div className="rounded-lg border border-border/60 bg-background px-3 py-2.5">
+      <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
         {label}
       </p>
       <p
         className={cn(
           "mt-1 text-base tabular-nums",
-          isBalance && "font-bold text-primary",
           tone === "positive" &&
             "font-semibold text-emerald-600 dark:text-emerald-400",
           tone === "default" && "font-semibold text-foreground",
         )}
       >
         {value}
-      </p>
-    </div>
-  );
-}
-
-/**
- * The totals above are posted figures. Receipts the client already handed over
- * but that have not cleared are totalled here, however many there are, with the
- * balance the invoice settles to once they clear. Renders only when the invoice
- * actually holds an unsettled receipt.
- */
-function InvoiceClearanceBreakdown({
-  summary,
-  t,
-}: {
-  summary: InvoicePaymentSummary;
-  t: TranslateFn;
-}) {
-  if (summary.pendingClearance <= 0) return null;
-
-  const countKey =
-    summary.pendingClearanceCount === 1
-      ? "invoices.view.payment.pendingPaymentCount_one"
-      : "invoices.view.payment.pendingPaymentCount_other";
-
-  return (
-    <div className="mt-2.5 rounded-lg border border-sky-500/40 bg-sky-500/5 px-3 py-2.5">
-      <div className="flex items-center gap-2">
-        <Clock3 className="size-3.5 shrink-0 text-sky-700 dark:text-sky-300" />
-        <p className="text-[10px] font-semibold uppercase tracking-wider text-sky-700 dark:text-sky-300">
-          {t("invoices.view.payment.clearanceBreakdown")}
-        </p>
-      </div>
-      <dl className="mt-2 space-y-1">
-        <div className="flex items-baseline justify-between gap-3">
-          <dt className="text-xs text-muted-foreground">
-            {t("invoices.view.payment.pendingClearance")}
-            {summary.pendingClearanceCount > 0 ? (
-              <>
-                {" "}
-                <span className="text-muted-foreground/80">
-                  · {t(countKey, { count: summary.pendingClearanceCount })}
-                </span>
-              </>
-            ) : null}
-          </dt>
-          <dd className="text-sm font-semibold tabular-nums text-foreground">
-            {formatInvoiceMoney(summary.pendingClearance)}
-          </dd>
-        </div>
-        <div className="flex items-baseline justify-between gap-3">
-          <dt className="text-xs text-muted-foreground">
-            {t("invoices.view.payment.balanceAfterClearance")}
-          </dt>
-          <dd className="text-sm font-semibold tabular-nums text-foreground">
-            {formatInvoiceMoney(summary.balanceAfterClearance)}
-          </dd>
-        </div>
-      </dl>
-      <p className="mt-2 text-xs text-muted-foreground">
-        {t("invoices.view.payment.pendingClearanceHint")}
       </p>
     </div>
   );
@@ -282,7 +253,7 @@ export function InvoiceViewSheet({
 }: InvoiceViewSheetProps) {
   const { t, locale } = useTranslation();
   const { hasPermission } = useAuth();
-  const [activeTab, setActiveTab] = useState<"overview" | "documents">(
+  const [activeTab, setActiveTab] = useState<InvoiceViewTab>(
     initialTab ?? "overview",
   );
   const allowRequestChange = hasPermission("canCreateChangeRequest", "change_request");
@@ -299,6 +270,7 @@ export function InvoiceViewSheet({
   if (!invoice || !totals || !payment) return null;
 
   const paidStatus = resolveInvoicePaidStatus(invoice);
+  const openTone = paidStatus === "open" ? "text-red-700 dark:text-red-300" : undefined;
   const empty = t("common.empty.dash");
   const containerLabel = getContainerLabelForInvoice(invoice);
   const pickupReference = invoice.pickupId?.trim()
@@ -308,7 +280,11 @@ export function InvoiceViewSheet({
   return (
     <RecordViewSheet open={open} onOpenChange={onOpenChange}>
       <RecordViewSheetContent
-        className={activeTab === "documents" ? "sm:max-w-6xl" : undefined}
+        className={
+          activeTab === "documents" || activeTab === "tracking"
+            ? "sm:max-w-6xl"
+            : undefined
+        }
       >
         <RecordViewSheetHeader
           icon={Receipt}
@@ -318,12 +294,13 @@ export function InvoiceViewSheet({
 
         <RecordViewSheetTabs
           idPrefix="invoice"
-          aria-label={t("invoices.documents.title")}
+          aria-label={t("invoices.view.tabs")}
           value={activeTab}
           onValueChange={setActiveTab}
           tabs={[
             { id: "overview" as const, label: t("invoices.documents.overview") },
             { id: "documents" as const, label: t("invoices.documents.title") },
+            { id: "tracking" as const, label: t("invoices.view.tracking") },
           ]}
         />
         {activeTab === "documents" ? (
@@ -339,36 +316,61 @@ export function InvoiceViewSheet({
               />
             </div>
           </RecordViewSheetBody>
+        ) : activeTab === "tracking" ? (
+          <RecordViewSheetBody
+            role="tabpanel"
+            id="invoice-panel-tracking"
+            aria-labelledby="invoice-tab-tracking"
+          >
+            <InvoiceBarcodeStatusSection invoice={invoice} />
+            <InvoicePackageTrackerSection invoice={invoice} />
+            <InvoiceActivitySection invoice={invoice} />
+          </RecordViewSheetBody>
         ) : (
           <RecordViewSheetBody
             role="tabpanel"
             id="invoice-panel-overview"
             aria-labelledby="invoice-tab-overview"
           >
-            <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
-              <InvoiceTotalCell
-                label={t("invoices.columns.total")}
-                value={formatInvoiceMoney(totals.subtotal)}
-              />
-              <InvoiceTotalCell
-                label={t("invoices.columns.discount")}
-                value={formatInvoiceDeduction(invoice.discount)}
-              />
-              <InvoiceTotalCell
-                label={t("invoices.view.payment.totalPaid")}
-                value={formatInvoiceDeduction(payment.totalPaid)}
-                tone={payment.totalPaid > 0 ? "positive" : "default"}
-              />
-              <InvoiceTotalCell
-                label={t("invoices.view.payment.outstandingBalance")}
-                value={formatInvoiceMoney(payment.outstandingBalance)}
-                tone="balance"
-              />
-            </div>
-            <InvoiceClearanceBreakdown summary={payment} t={t} />
+            <RecordViewSheetSection
+              title={t("invoices.view.totals")}
+              icon={Wallet}
+              headerAction={
+                canEdit ? (
+                  <InvoiceSectionEditButton
+                    label={t("invoices.view.actions.editTotals")}
+                    onClick={() => onEdit(invoice, { initialWizardStep: 3 })}
+                  />
+                ) : undefined
+              }
+            >
+              <div className="grid grid-cols-3 gap-2.5 p-4">
+                <InvoiceTotalCell
+                  label={t("invoices.columns.total")}
+                  value={formatInvoiceMoney(totals.subtotal)}
+                />
+                <InvoiceTotalCell
+                  label={t("invoices.columns.discount")}
+                  value={formatInvoiceDeduction(invoice.discount)}
+                />
+                <InvoiceTotalCell
+                  label={t("invoices.view.payment.totalPaid")}
+                  value={formatInvoiceDeduction(payment.totalPaid)}
+                  tone={payment.totalPaid > 0 ? "positive" : "default"}
+                />
+              </div>
+            </RecordViewSheetSection>
             <RecordViewSheetSection
               title={t("invoices.form.sections.invoiceDetails")}
               icon={Receipt}
+              headerAction={
+                canEdit ? (
+                  <InvoiceSectionEditButton
+                    label={t("invoices.view.actions.editInvoiceDetails")}
+                    onClick={() => onEdit(invoice, { initialWizardStep: 1 })}
+                  />
+                ) : undefined
+              }
             >
               <RecordViewSheetDetailRow
                 label={t("invoices.form.fields.date")}
@@ -380,13 +382,14 @@ export function InvoiceViewSheet({
               />
               <RecordViewSheetDetailRow
                 label={t("invoices.view.fields.paymentStatus")}
+                labelClassName={openTone}
                 value={
                   <Badge
                     variant="outline"
                     className={
                       paidStatus === "closed"
                         ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
-                        : "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300"
+                        : "border-red-500/30 bg-red-500/10 text-red-700 dark:text-red-300"
                     }
                   >
                     {getInvoicePaidStatusLabel(paidStatus, t)}
@@ -394,27 +397,15 @@ export function InvoiceViewSheet({
                 }
               />
               <RecordViewSheetDetailRow
-                label={t("invoices.view.fields.clientPaymentStatus")}
-                value={
-                  <Badge
-                    variant="outline"
-                    className={getInvoiceCustomerPaymentBadgeClass(payment.customerStatus)}
-                  >
-                    {getInvoiceCustomerPaymentLabel(payment.customerStatus, t)}
-                  </Badge>
-                }
+                label={t("invoices.view.payment.outstandingBalance")}
+                labelClassName={openTone}
+                value={<span className={cn("font-semibold", openTone)}>{formatInvoiceMoney(payment.outstandingBalance)}</span>}
               />
-              {payment.clearanceStatus === "NOT_REQUIRED" ? null : (
+              {payment.pendingClearance > 0 && (
                 <RecordViewSheetDetailRow
-                  label={t("invoices.view.fields.clearanceStatus")}
-                  value={
-                    <Badge
-                      variant="outline"
-                      className={getInvoiceClearanceBadgeClass(payment.clearanceStatus)}
-                    >
-                      {getInvoiceClearanceLabel(payment.clearanceStatus, t)}
-                    </Badge>
-                  }
+                  label={t("invoices.view.payment.balanceToClear")}
+                  labelClassName="text-yellow-800 dark:text-yellow-300"
+                  value={<span className="font-semibold text-yellow-800 dark:text-yellow-300">{formatInvoiceMoney(payment.pendingClearance)}</span>}
                 />
               )}
               <RecordViewSheetDetailRow
@@ -439,16 +430,42 @@ export function InvoiceViewSheet({
               title={t("invoices.form.fields.sender")}
               party={invoice.sender}
               icon={Send}
+              headerAction={
+                canEdit ? (
+                  <InvoiceSectionEditButton
+                    label={t("invoices.form.partyActions.editSender")}
+                    onClick={() => onEdit(invoice, { initialWizardStep: 2 })}
+                  />
+                ) : undefined
+              }
             />
             {invoice.receiver ? (
               <PartySection
                 title={t("invoices.form.fields.receiver")}
                 party={invoice.receiver}
                 icon={UserRound}
+                headerAction={
+                  canEdit ? (
+                    <InvoiceSectionEditButton
+                      label={t("invoices.form.partyActions.editReceiver")}
+                      onClick={() => onEdit(invoice, { initialWizardStep: 2 })}
+                    />
+                  ) : undefined
+                }
               />
             ) : null}
 
-            <InvoiceLineItemsSection lineItems={invoice.lineItems} />
+            <InvoiceLineItemsSection
+              lineItems={invoice.lineItems}
+              headerAction={
+                canEdit ? (
+                  <InvoiceSectionEditButton
+                    label={t("invoices.view.actions.editLineItems")}
+                    onClick={() => onEdit(invoice, { initialWizardStep: 3 })}
+                  />
+                ) : undefined
+              }
+            />
 
             <InvoiceCommentsSection
               comments={invoice.comments}
@@ -458,12 +475,6 @@ export function InvoiceViewSheet({
             />
 
             <InvoicePaymentsSection invoice={invoice} />
-
-            <InvoiceBarcodeStatusSection invoice={invoice} />
-
-            <InvoicePackageTrackerSection invoice={invoice} />
-
-            <InvoiceActivitySection invoice={invoice} />
 
             <RecordViewSheetSection title={t("invoices.view.system")} icon={Info}>
               <RecordViewSheetDetailRow
@@ -496,8 +507,13 @@ export function InvoiceViewSheet({
                 <Printer className="size-4" />
                 {isPrinting
                   ? t("invoices.wizard.actions.preparing")
-                  : t("invoices.wizard.actions.printInvoice")}
+                  : t("invoices.wizard.actions.print")}
               </Button>
+              <InvoiceDocumentsButton
+                invoice={invoice}
+                selectedCount={1}
+                onOpen={() => setActiveTab("documents")}
+              />
               <TableSelectionActionsMenu>
                 <TableSelectionActionItem
                   disabled={manageItemsDisabled}

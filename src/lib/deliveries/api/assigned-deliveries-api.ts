@@ -20,18 +20,19 @@ const ASSIGNED_ROUTE_FILTER: ApiSearchFilter = { field: "route.id", operator: "n
 export function fetchAssignedDeliveryBarcodesPage(
   params: CatalogPageParams,
   signal?: AbortSignal,
+  routeEmployee?: string,
 ): Promise<PaginatedResult<AssignedDeliveryBarcode>> {
   return fetchCatalogPage(
     {
       endpoint: API_ENDPOINTS.DELIVERIES_ASSIGNED_BARCODES,
       client: {
-        get: (url, config) => apiClient.get(url, { ...config, signal }),
-        post: (url, data, config) => apiClient.post(url, data, { ...config, signal }),
+        get: (url, config) => apiClient.get(url, { ...config, signal, params: { routeEmployee } }),
+        post: (url, data, config) => apiClient.post(url, data, { ...config, signal, params: { routeEmployee } }),
       },
       barOrSearchFields: ASSIGNED_DELIVERY_BAR_OR_SEARCH_FIELDS,
       filterFields: ASSIGNED_DELIVERY_TABLE_FILTER_FIELDS,
       expandNode: expandAssignedDeliveryFilterNode,
-      fixedFilters: [ASSIGNED_ROUTE_FILTER],
+      fixedFilters: routeEmployee ? undefined : [ASSIGNED_ROUTE_FILTER],
       parseRows: parseAssignedDeliveryBarcodes,
     },
     params,

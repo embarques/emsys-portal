@@ -363,7 +363,6 @@
     "actions": {
       "back": "Back",
       "print": "Print",
-      "printInvoice": "Print invoice",
       "preparing": "Preparing…"
     },
     "validation": {
@@ -568,8 +567,16 @@
     }
   },
   "view": {
+    "tabs": "Invoice views",
+    "tracking": "Tracking",
+    "totals": "Totals",
     "system": "System",
     "pickupAssignment": "Pickup supervisor",
+    "actions": {
+      "editInvoiceDetails": "Edit invoice details",
+      "editLineItems": "Edit line items",
+      "editTotals": "Edit cost"
+    },
     "fields": {
       "documentId": "Doc",
       "phones": "Phones",
@@ -590,6 +597,7 @@
       "pendingPaymentCount_one": "{{count}} payment",
       "pendingPaymentCount_other": "{{count}} payments",
       "balanceAfterClearance": "Balance after clearing",
+      "balanceToClear": "Balance to be cleared",
       "pendingClearanceHint": "These payments were received from the client but have not cleared yet. The outstanding balance above is the posted balance; it drops to the balance after clearing once they clear.",
       "clientUnpaid": "Unpaid",
       "clientPartiallyPaid": "Partially paid",

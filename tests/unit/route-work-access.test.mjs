@@ -24,6 +24,7 @@ const { PERMISSIONS, permissionIsGranted, permissionKey } = permissions;
 function authFor(grants, extra = {}) {
   const keys = new Set(grants.map(([name, resourceType]) => permissionKey({ name, resourceType })));
   return {
+    permissions: grants.map(([name, resourceType]) => ({ name, resourceType })),
     isAuthenticated: true,
     companyId: 1,
     user: { uid: "worker-1" },
@@ -127,7 +128,7 @@ test("appointment lists separate company, actor, permission scope and workspace 
   assert.notDeepEqual(ordinary.queryKey, broad.queryKey);
   assert.equal(broad.enabled, true);
   await broad.queryFn();
-  assert.deepEqual(calls, [{ ...params, assignedRouteOnly: true }], "Only the routed-pickup scope is added; the API owns employee assignment scope");
+  assert.deepEqual(calls, [{ ...params, assignedRouteOnly: true, routeEmployee: "me" }], "Only the routed-pickup scope is added; the API owns employee assignment scope");
 
   auth = authFor([["canViewAssignedAppointments", "pickup"]]);
   const assigned = useOrders(params, { routeMode: true });

@@ -8,6 +8,7 @@ import {
   CatalogTablePagination,
   CatalogTableToolbar,
 } from "@/components/app-shell/catalog-table-toolbar";
+import { RouteWorklist } from "@/components/pickup-delivery-routes/route-worklist";
 import { PageHeader } from "@/components/app-shell/page-header";
 import {
   TableSelectionActionsMenu,
@@ -47,10 +48,10 @@ function rowKey(row: AssignedDeliveryBarcode) {
 
 export function DeliveriesWorkspace() {
   const access = useDeliveryAccess();
-  return <RouteDeliveriesTable key={`${access.companyId}:${access.actorId}:${access.viewScope}:${access.canDeliver}:${access.canPrint}`} access={access} />;
+  return <RouteWorklist canViewOthers={access.canList && access.viewScope === "all"} key={`${access.companyId}:${access.actorId}:${access.viewScope}:${access.canDeliver}:${access.canPrint}`}>{(employee) => <RouteDeliveriesTable access={access} routeEmployee={employee} />}</RouteWorklist>;
 }
 
-function RouteDeliveriesTable({ access }: { access: ReturnType<typeof useDeliveryAccess> }) {
+function RouteDeliveriesTable({ access, routeEmployee }: { routeEmployee: string; access: ReturnType<typeof useDeliveryAccess> }) {
   const { t } = useTranslation();
   const dash = t("common.empty.dash");
   const [printRow, setPrintRow] = useState<AssignedDeliveryBarcode | null>(null);
@@ -64,8 +65,8 @@ function RouteDeliveriesTable({ access }: { access: ReturnType<typeof useDeliver
     keyPrefix: "deliveries.filters.fields",
     defaultSort: DEFAULT_ASSIGNED_DELIVERY_SORT,
     getRowId: rowKey,
-    queryKey: (params) => [...queryKeys.deliveries.assignedPage(access.companyId, access.actorId, params), access.viewScope],
-    fetchPage: fetchAssignedDeliveryBarcodesPage,
+    queryKey: (params) => [...queryKeys.deliveries.assignedPage(access.companyId, access.actorId, params), access.viewScope, routeEmployee],
+    fetchPage: (params, signal) => fetchAssignedDeliveryBarcodesPage(params, signal, routeEmployee),
   });
   const { sort } = table;
   const { selectedIds, selectedRows } = table.selection;
