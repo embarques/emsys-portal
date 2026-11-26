@@ -63,7 +63,7 @@ export function PhoneActionRow({
   return (
     <div
       className={cn(
-        "grid grid-cols-[minmax(6.5rem,38%)_1fr] items-center gap-x-4 border-b border-border/80 px-4 py-2.5 last:border-b-0 even:bg-muted/25",
+        "border-b border-border/80 px-4 py-2.5 last:border-b-0 even:bg-muted/25",
         className,
       )}
     >
@@ -71,16 +71,19 @@ export function PhoneActionRow({
         {label}
       </p>
 
-      <div className="flex min-w-0 items-center justify-end gap-1.5">
-        {isPrimary ? (
-          <Star
-            className="size-3.5 shrink-0 fill-current text-amber-500"
-            aria-label={t("phones.primary")}
-          />
-        ) : null}
-        <p className="min-w-0 text-right text-sm font-medium leading-snug text-foreground [overflow-wrap:anywhere]">
-          {display}
-        </p>
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex min-w-0 flex-1 items-start gap-1.5">
+          {isPrimary ? (
+            <Star
+              className="mt-0.5 size-3.5 shrink-0 fill-current text-amber-500"
+              aria-label={t("phones.primary")}
+            />
+          ) : null}
+          <p className="min-w-0 flex-1 text-sm font-medium leading-snug text-foreground [overflow-wrap:anywhere]">
+            {display}
+          </p>
+        </div>
+
         <div className="flex shrink-0 items-center gap-0.5">
           <Tooltip>
             <TooltipTrigger asChild>

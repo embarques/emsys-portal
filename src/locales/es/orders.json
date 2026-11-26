@@ -1,4 +1,6 @@
 {
+  "myRouteWork": "Mi trabajo asignado",
+  "routeWorkEmployee": "Empleado asignado o supervisor de ruta",
   "entity": "Cita",
   "entityPlural": "citas",
   "title": "Citas",

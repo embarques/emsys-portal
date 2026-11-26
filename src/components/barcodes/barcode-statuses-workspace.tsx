@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Plus, Save, Tag } from "lucide-react";
 
 import {
@@ -12,10 +12,10 @@ import {
 import { useFormEnterNavigation } from "@/hooks/use-form-enter-navigation";
 
 import { CatalogBulkDeleteDialog } from "@/components/app-shell/catalog-bulk-delete-dialog";
-import { DirectoryTableRowActions } from "@/components/app-shell/directory-table-row-actions";
 import { PageHeader } from "@/components/app-shell/page-header";
 import { TableSelectionToolbar } from "@/components/app-shell/table-selection-toolbar";
 import { useColumnVisibility } from "@/components/app-shell/use-column-visibility";
+import { BarcodeStatusViewSheet } from "@/components/barcodes/barcode-status-view-sheet";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader } from "@/components/ui/card";
 import { Dialog } from "@/components/ui/dialog";
@@ -37,7 +37,22 @@ const isProtectedBarcodeStatus = (status: BarcodeStatusOption) =>
 
 export function BarcodeStatusesWorkspace() {
   const handleEnterNavigation = useFormEnterNavigation();
-  const { t, isSaving, isDeleting, dialogOpen, setDialogOpen, editing, form, error, openCreate, openEdit, save, remove, deleteRecord } = useBarcodeStatusesWorkspace();
+  const {
+    t,
+    isSaving,
+    isDeleting,
+    dialogOpen,
+    setDialogOpen,
+    editing,
+    form,
+    error,
+    openCreate,
+    openEdit,
+    save,
+    remove,
+    deleteRecord,
+  } = useBarcodeStatusesWorkspace();
+  const [viewStatus, setViewStatus] = useState<BarcodeStatusOption | null>(null);
   const table = useCatalogTable({
     fields: BARCODE_STATUS_TABLE_FILTER_FIELDS,
     keyPrefix: "barcodeStatuses.filters.fields",
@@ -64,6 +79,11 @@ export function BarcodeStatusesWorkspace() {
   ], [t]);
   const columnLayout = useColumnVisibility("barcode-statuses-catalog-v1", columns);
   const { selectedIds, selectedRows } = table.selection;
+
+  function handleEdit(status: BarcodeStatusOption) {
+    setViewStatus(null);
+    openEdit(status);
+  }
 
   return (
     <div className="max-w-full overflow-x-hidden">
@@ -98,7 +118,7 @@ export function BarcodeStatusesWorkspace() {
             selectedRows.every(isProtectedBarcodeStatus)
           }
           onEdit={() => {
-            if (selectedRows[0]) openEdit(selectedRows[0]);
+            if (selectedRows[0]) handleEdit(selectedRows[0]);
           }}
           onDelete={() =>
             bulkDelete.request(selectedRows.filter((row) => !isProtectedBarcodeStatus(row)))
@@ -111,19 +131,27 @@ export function BarcodeStatusesWorkspace() {
           rowKey={statusRowId}
           rowLabel={(status) => status.name}
           emptyMessage={t("barcodeStatuses.empty")}
-          onRowDoubleClick={openEdit}
-          renderSelectCellActions={(status) => (
-            <DirectoryTableRowActions
-              row={status}
-              onEdit={openEdit}
-              onDelete={isProtectedBarcodeStatus(status) ? undefined : (row) => void remove(row)}
-              deleteDisabled={isDeleting || isProtectedBarcodeStatus(status)}
-            />
-          )}
+          onRowClick={setViewStatus}
+          onRowDoubleClick={handleEdit}
+          activeRowId={viewStatus ? statusRowId(viewStatus) : undefined}
         />
         <CatalogTablePagination state={table} />
       </Card>
       <CatalogBulkDeleteDialog state={bulkDelete} entity={t("barcodeStatuses.entity")} entities={t("barcodeStatuses.entities")} getName={(status) => status.name} />
+
+      <BarcodeStatusViewSheet
+        status={viewStatus}
+        open={Boolean(viewStatus)}
+        onOpenChange={(open) => {
+          if (!open) setViewStatus(null);
+        }}
+        onEdit={handleEdit}
+        onDelete={(status) => {
+          setViewStatus(null);
+          void remove(status);
+        }}
+        deleteDisabled={isDeleting}
+      />
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <CompactActionDialogContent className="sm:max-w-lg">

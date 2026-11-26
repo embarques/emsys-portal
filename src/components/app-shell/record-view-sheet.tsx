@@ -66,9 +66,15 @@ type RecordViewSheetSectionProps = {
 
 type RecordViewSheetDetailRowProps = {
   label: string;
+  labelClassName?: string;
   value: React.ReactNode;
   /** `end` keeps the label left and pushes the value to the right edge (line items, totals). */
   valueAlign?: "start" | "end";
+  /**
+   * `stacked` places the value under the label (same pattern as address/phone action rows).
+   * Default `inline` keeps the two-column label | value grid.
+   */
+  layout?: "inline" | "stacked";
 };
 
 function isPlaceholderValue(value: React.ReactNode): boolean {
@@ -233,13 +239,37 @@ export function RecordViewSheetSection({
   );
 }
 
-export function RecordViewSheetDetailRow({ label, value, valueAlign = "start" }: RecordViewSheetDetailRowProps) {
+export function RecordViewSheetDetailRow({
+  label,
+  labelClassName,
+  value,
+  valueAlign = "start",
+  layout = "inline",
+}: RecordViewSheetDetailRowProps) {
   if (isPlaceholderValue(value)) return null;
+
+  if (layout === "stacked") {
+    return (
+      <div className="border-b border-border/80 px-4 py-2.5 last:border-b-0 even:bg-muted/25">
+        <p
+          className={cn(
+            "min-w-0 text-xs font-medium leading-snug text-muted-foreground [overflow-wrap:anywhere]",
+            labelClassName,
+          )}
+        >
+          {label}
+        </p>
+        <div className="min-w-0 whitespace-pre-wrap text-sm font-medium leading-snug text-foreground [overflow-wrap:anywhere]">
+          {value}
+        </div>
+      </div>
+    );
+  }
 
   if (valueAlign === "end") {
     return (
       <div className="flex items-baseline justify-between gap-4 border-b border-border/80 px-4 py-2.5 last:border-b-0 even:bg-muted/25">
-        <span className="min-w-0 text-xs font-medium leading-snug text-muted-foreground [overflow-wrap:anywhere]">{label}</span>
+        <span className={cn("min-w-0 text-xs font-medium leading-snug text-muted-foreground [overflow-wrap:anywhere]", labelClassName)}>{label}</span>
         <span className="max-w-[65%] shrink-0 whitespace-pre-wrap text-right text-sm font-medium leading-snug tabular-nums text-foreground [overflow-wrap:anywhere]">
           {value}
         </span>
@@ -249,7 +279,7 @@ export function RecordViewSheetDetailRow({ label, value, valueAlign = "start" }:
 
   return (
     <div className="grid grid-cols-[minmax(6.5rem,38%)_1fr] items-baseline gap-x-4 border-b border-border/80 px-4 py-2.5 last:border-b-0 even:bg-muted/25">
-      <span className="text-xs font-medium leading-snug text-muted-foreground">{label}</span>
+      <span className={cn("text-xs font-medium leading-snug text-muted-foreground", labelClassName)}>{label}</span>
       <span className="min-w-0 whitespace-pre-wrap text-right text-sm font-medium leading-snug text-foreground [overflow-wrap:anywhere]">
         {value}
       </span>

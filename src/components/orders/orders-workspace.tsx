@@ -363,7 +363,7 @@ const defaultFilters: OrderFilterState = {
   rows: [],
 };
 
-export function OrdersWorkspace({ routeMode = false }: { routeMode?: boolean } = {}) {
+export function OrdersWorkspace({ routeMode = false, routeEmployee }: { routeMode?: boolean; routeEmployee?: string } = {}) {
   const routeAccess = useRouteAppointmentsAccess();
   const { t } = useTranslation();
   const tabScope = useWorkspaceTabScope();
@@ -376,7 +376,7 @@ export function OrdersWorkspace({ routeMode = false }: { routeMode?: boolean } =
   const debouncedQuery = useDebouncedValue(filters.query);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const { page, setPage, pageSize, pageLimit, changePageSize, rememberTotal } = useTablePageSize();
-  const { sort, onSortChange } = useTableSort(DEFAULT_ORDER_LIST_PARAMS.sort, () => setPage(1));
+  const { sort, onSortChange } = useTableSort(routeMode ? "route.id:asc,orderNumber:asc,id:asc" : DEFAULT_ORDER_LIST_PARAMS.sort, () => setPage(1));
   const [viewOrder, setViewOrder] = useState<Order | null>(null);
   const [isOpeningReorderMap, setIsOpeningReorderMap] = useState(false);
   const [formMode, setFormMode] = useState<"add" | "edit" | null>(null);
@@ -404,7 +404,7 @@ export function OrdersWorkspace({ routeMode = false }: { routeMode?: boolean } =
     [debouncedQuery, filters.rows, page, pageLimit, sort],
   );
 
-  const { data, isLoading, isError, error, isFetching } = useOrders(listParams, { routeMode, enabled: !routeMode || routeAccess.canView });
+  const { data, isLoading, isError, error, isFetching } = useOrders({ ...listParams, routeEmployee }, { routeMode, enabled: !routeMode || routeAccess.canView });
   const { data: usersData, isLoading: usersLoading } = useUsers({
     page: 1,
     limit: 100,
@@ -777,6 +777,8 @@ export function OrdersWorkspace({ routeMode = false }: { routeMode?: boolean } =
     }
 
     writeOrdersMapContext({
+      routeEmployee,
+      routeScopeKey: routeAccess.scopeKey,
       filters,
       sort,
       selectedIds: mappableSelected.map((order) => getOrderRecordId(order)),
@@ -819,6 +821,8 @@ export function OrdersWorkspace({ routeMode = false }: { routeMode?: boolean } =
       }
 
       writeOrdersMapContext({
+        routeEmployee,
+        routeScopeKey: routeAccess.scopeKey,
         filters: { query: "", rows: buildPickupRouteFilterRows(dailyRouteId) },
         sort: DEFAULT_ORDER_LIST_SORT,
         selectedIds: pickups.map((order) => getOrderRecordId(order)),
@@ -963,6 +967,12 @@ export function OrdersWorkspace({ routeMode = false }: { routeMode?: boolean } =
 
   const tableColumns: DataTableColumn<Order>[] = useMemo(
     () => [
+    ...(routeMode ? [{
+      id: "orderNumber",
+      label: t("orders.map.legend.stopOrder"),
+      sortField: "orderNumber",
+      renderCell: (order: Order) => order.orderNumber || "—",
+    }] : []),
     {
       id: "id",
       label: t("orders.tableColumns.id"),
@@ -1006,7 +1016,6 @@ export function OrdersWorkspace({ routeMode = false }: { routeMode?: boolean } =
       sortField: "sender.phone1",
       defaultWidth: 180,
       truncateCell: false,
-      cellClassName: "align-top",
       renderCell: (order) => <CustomerTablePhoneCell customer={order.sender} />,
     },
     {
@@ -1014,7 +1023,7 @@ export function OrdersWorkspace({ routeMode = false }: { routeMode?: boolean } =
       label: t("orders.tableColumns.senderName"),
       sortField: "sender.name",
       defaultWidth: 180,
-      cellClassName: "align-top font-medium",
+      cellClassName: "font-medium",
       renderCell: (order) => order.sender.name.trim() || t("common.empty.dash"),
     },
     {
@@ -1023,7 +1032,7 @@ export function OrdersWorkspace({ routeMode = false }: { routeMode?: boolean } =
       sortField: "sender.address.address1",
       defaultWidth: 320,
       truncateCell: false,
-      cellClassName: cn(ADDRESS_TEXT_WRAP_CLASSNAME, "align-top"),
+      cellClassName: ADDRESS_TEXT_WRAP_CLASSNAME,
       copyValue: (order) => {
         const primary = getPrimaryAddress(order.sender);
         if (!primary) return undefined;
@@ -1101,7 +1110,7 @@ export function OrdersWorkspace({ routeMode = false }: { routeMode?: boolean } =
       sortField: "comments.description",
       defaultWidth: 360,
       truncateCell: false,
-      cellClassName: cn(ADDRESS_TEXT_WRAP_CLASSNAME, "align-top"),
+      cellClassName: ADDRESS_TEXT_WRAP_CLASSNAME,
       copyValue: (order) => {
         const summary = formatOrderCommentsSummary(order);
         return summary === "—" ? undefined : summary;
@@ -1139,7 +1148,7 @@ export function OrdersWorkspace({ routeMode = false }: { routeMode?: boolean } =
         formatOrderRouteName(order, pickupRouteLookup.getByKey(order.routeId), t),
     },
   ],
-    [pickupRouteLookup, t],
+    [pickupRouteLookup, routeMode, t],
   );
 
   // Bump storage key so prior 520px-capped widths are not reused after compact fit.

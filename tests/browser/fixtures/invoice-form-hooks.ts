@@ -50,3 +50,5 @@ export function useOrder(id: string | null) {
   return order ? { data: order, isFetching: false, isLoading: false } : idle;
 }
 export function useOrderSearch() { return { data: { items: [] }, isFetching: false }; }
+
+export function useResponsibilityAccess() { return { ready: true, canAssign: true, ownEmployee: null }; }

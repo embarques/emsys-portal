@@ -339,7 +339,7 @@ export function CustomersWorkspace() {
       label: t("customers.columns.customerType"),
       truncateCell: false,
       defaultWidth: 150,
-      cellClassName: "align-top overflow-visible",
+      cellClassName: "overflow-visible",
       renderCell: (customer) => {
         const clientType = getCustomerClientType(customer) ?? "sender";
         const typeLabel = isCustomerReceiverType(customer.customerType)
@@ -363,7 +363,7 @@ export function CustomersWorkspace() {
       label: t("customers.columns.name"),
       sortField: "name",
       defaultWidth: 240,
-      cellClassName: "align-top font-medium",
+      cellClassName: "font-medium",
       renderCell: (customer) => customer.name,
     },
     {
@@ -372,7 +372,7 @@ export function CustomersWorkspace() {
       sortField: "phones.number",
       truncateCell: false,
       defaultWidth: 260,
-      cellClassName: cn(ADDRESS_TEXT_WRAP_CLASSNAME, "align-top"),
+      cellClassName: ADDRESS_TEXT_WRAP_CLASSNAME,
       renderCell: (customer) => <CustomerTablePhoneCell customer={customer} />,
     },
     {
@@ -380,7 +380,6 @@ export function CustomersWorkspace() {
       label: t("customers.columns.IDNumber"),
       defaultVisible: false,
       defaultWidth: 140,
-      cellClassName: "align-top",
       renderCell: (customer) => customer.IDNumber || t("common.empty.dash"),
     },
     {
@@ -390,7 +389,7 @@ export function CustomersWorkspace() {
       defaultWidth: 300,
       truncateCell: false,
       stopRowClick: true,
-      cellClassName: cn(ADDRESS_TEXT_WRAP_CLASSNAME, "align-top"),
+      cellClassName: ADDRESS_TEXT_WRAP_CLASSNAME,
       renderCell: (customer) => <CustomerTableAddressCell customer={customer} />,
     },
     {
@@ -419,7 +418,6 @@ export function CustomersWorkspace() {
       label: t("customers.columns.email"),
       defaultVisible: false,
       defaultWidth: 220,
-      cellClassName: "align-top",
       renderCell: (customer) => customer.email || t("common.empty.dash"),
     },
     {
@@ -427,7 +425,6 @@ export function CustomersWorkspace() {
       label: t("customers.columns.accountBalance"),
       defaultVisible: false,
       defaultWidth: 120,
-      cellClassName: "align-top",
       renderCell: (customer) => formatAccountBalance(customer.accountBalance),
     },
     {
@@ -435,20 +432,19 @@ export function CustomersWorkspace() {
       label: t("customers.columns.notes"),
       defaultVisible: false,
       defaultWidth: 260,
-      cellClassName: "align-top",
       renderCell: (customer) => customer.notes || t("common.empty.dash"),
     },
     {
       id: "createdBy",
       label: t("customers.columns.createdBy"),
       defaultVisible: false,
-      cellClassName: "align-top text-muted-foreground",
+      cellClassName: "text-muted-foreground",
       renderCell: (customer) => formatCustomerAuditActor(customer.createdBy),
     },
     {
       id: "createdAt",
       label: t("customers.columns.createdAt"),
-      cellClassName: "align-top text-muted-foreground",
+      cellClassName: "text-muted-foreground",
       renderCell: (customer) =>
         customer.createdAt ? formatAuditDateTime(customer.createdAt) : t("common.empty.dash"),
     },
@@ -456,14 +452,14 @@ export function CustomersWorkspace() {
       id: "updatedBy",
       label: t("customers.columns.updatedBy"),
       defaultVisible: false,
-      cellClassName: "align-top text-muted-foreground",
+      cellClassName: "text-muted-foreground",
       renderCell: (customer) => formatCustomerAuditActor(customer.updatedBy),
     },
     {
       id: "updatedAt",
       label: t("customers.columns.updatedAt"),
       defaultVisible: false,
-      cellClassName: "align-top text-muted-foreground",
+      cellClassName: "text-muted-foreground",
       renderCell: (customer) =>
         customer.updatedAt ? formatAuditDateTime(customer.updatedAt) : t("common.empty.dash"),
     },

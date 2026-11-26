@@ -79,7 +79,7 @@ test("unfiltered list searches only barcodes with an assigned route, sorted by c
   assert.match(decodeURIComponent(client.calls[0].url), /page=1/);
   assert.equal(client.calls[0].body.operator, "and");
   assert.deepEqual(client.calls[0].body.filters, [ASSIGNED_ROUTE_LEAF]);
-  assert.deepEqual(client.calls[0].body.sort, [{ field: "receiver.address.city", direction: "asc" }]);
+  assert.deepEqual(client.calls[0].body.sort, ["receiver.address.city", "invoice.number", "number"].map(field => ({ field, direction: "asc" })));
   assert.equal(client.calls[0].config.signal, controller.signal);
   assert.equal(result.total, 1);
   const [item] = result.items;
@@ -167,4 +167,16 @@ test("rows that are not barcodes are rejected", () => {
   assert.throws(() => parseAssignedDeliveryBarcodes([{}]));
   assert.throws(() => parseAssignedDeliveryBarcodes({ data: [] }));
   assert.equal(parseAssignedDeliveryBarcodes([{ ...row, receiver: null }])[0].receiver, null);
+});
+
+test("route worklist applies the same employee selection to list and search, including numeric delivery crews", async () => {
+  const client = createClient();
+  const { fetchAssignedDeliveryBarcodesPage } = loadFeature("src/lib/deliveries/api/assigned-deliveries-api.ts", client);
+  const params = {page: 1, limit: 25, sort: "receiver.address.city:asc"};
+  await fetchAssignedDeliveryBarcodesPage(params, undefined, "me");
+  await fetchAssignedDeliveryBarcodesPage({...params, query: "Santiago"}, undefined, "72");
+  assert.equal(client.calls[0].method, "GET");
+  assert.equal(client.calls[0].config.params.routeEmployee, "me");
+  assert.equal(client.calls[1].config.params.routeEmployee, "72");
+  assert.equal(collectLeaves(client.calls[1].body).some(filter => filter.field === "route.id" && filter.operator === "neq"), false);
 });

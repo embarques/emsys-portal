@@ -1292,7 +1292,7 @@
       },
       "sections": {
         "assignment": "Assigned to",
-        "invoiceResponsibility": "Invoice responsibility",
+        "invoiceResponsibility": "Merchandise pickup",
         "paymentResponsibility": "Payment responsibility",
         "invoiceDetails": "Invoice details",
         "invoiceAmount": "Invoice amount",

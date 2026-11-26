@@ -34,7 +34,6 @@ import {
   SearchableSelect,
   type SearchableSelectOption,
 } from "@/components/ui/searchable-select";
-import { SegmentedControl } from "@/components/ui/segmented-control";
 import { CustomerContactSummary } from "@/components/orders/customer-contact-summary";
 import { UnverifiedAddressNotice } from "@/components/addresses/unverified-address-notice";
 import { InvoiceLineItemsEditor } from "@/components/invoices/invoice-line-items-editor";
@@ -59,7 +58,11 @@ import {
 import { useEnsureCustomerDetail } from "@/lib/customers/hooks/use-customers";
 import { CUSTOMER_TYPE_RECEIVER, CUSTOMER_TYPE_SENDER, coreAddressHasContent, customerHasUnverifiedPrimaryAddress, getCustomerPrimaryCoreAddress, type Customer } from "@/lib/customers/types";
 import { formatContainerIdLabel, formatContainerLabel } from "@/lib/containers/display";
-import { formatInvoiceDate, formatInvoiceMoney } from "@/lib/invoices/display";
+import {
+  formatInvoiceDate,
+  formatInvoiceMoney,
+  getPaymentLocationLabel,
+} from "@/lib/invoices/display";
 import { INVOICE_WIZARD_FIELDS } from "@/lib/invoices/invoice-wizard-validation";
 import { getPrimaryPhoneDisplayNumber } from "@/lib/phones/phones";
 import { buildTransactionAssigneeOptions, resolveDailyRouteSupervisor } from "@/lib/accounting/daily-income/assignee";
@@ -79,18 +82,12 @@ import {
 } from "@/lib/employees/types";
 import {
   mapPaymentLocationToPaidRegion,
-  INVOICE_RECEIVED_VIA_CHOICES,
   computeInvoiceBalance,
   createEmptyInvoiceForm,
-  invoicePickupSourceToReceivedVia,
-  isInvoiceEmployeePickupSource,
-  receivedViaToInvoicePickupSource,
   resetInvoiceFormForNextEntry,
   resolveLineTotal,
   type InvoiceFormSubmitResult,
   type InvoiceFormValues,
-  type InvoicePickupSource,
-  type InvoiceReceivedViaChoice,
 } from "@/lib/invoices/types";
 import { useItemPicker } from "@/lib/items/hooks/use-items";
 import {
@@ -126,8 +123,9 @@ type InvoiceFormProps = {
   appearance?: "default" | "wizard" | "phoneWizard";
   showFooter?: boolean;
   /**
-   * Ask where the invoice will be paid (below line items in the non-wizard /
-   * edit form). Create wizards with a payment step collect this there instead.
+   * Ask where the invoice will be paid on the invoice-details step (step 1 /
+   * details section). Daily-income wizards may still show the same field on
+   * the payment step for convenience.
    */
   showPaymentLocation?: boolean;
   onValuesChange?: (values: InvoiceFormValues) => void;
@@ -299,7 +297,6 @@ export function InvoiceForm({
   const [entityError, setEntityError] = useState<string | null>(null);
   const [pickupQuery, setPickupQuery] = useState("");
   const [pickupEmployeeQuery, setPickupEmployeeQuery] = useState("");
-  const [pickupAssignmentOpenKey, setPickupAssignmentOpenKey] = useState(0);
   const navigateOnEnter = useFormEnterNavigation({
     advanceTextareas: Boolean(onContinue),
     submitOnLast: !onContinue,
@@ -323,8 +320,6 @@ export function InvoiceForm({
   }, [draftValues, isEditing, responsibilityLocked, responsibility.ready, responsibility.canAssign, pickupRoutes]);
   const { data: branchesData, isLoading: branchesLoading } = useBranchPicker();
   const branches = useMemo(() => branchesData?.items ?? [], [branchesData?.items]);
-  const isEmployeePickupSource = isInvoiceEmployeePickupSource(values.pickupSource);
-  const receivedVia = invoicePickupSourceToReceivedVia(values.pickupSource);
   const employeesQuery = useEmployees({
     ...DEFAULT_EMPLOYEE_LIST_PARAMS,
     limit: 200,
@@ -335,7 +330,7 @@ export function InvoiceForm({
     debouncedPickupEmployeeQuery
       ? { field: "name", operator: "contains", value: debouncedPickupEmployeeQuery }
       : undefined,
-    { enabled: isEmployeePickupSource && responsibility.canAssign },
+    { enabled: !values.routeId && responsibility.canAssign },
   );
   const pickupRouteOptions = useMemo(
     () => buildActiveRouteAssignmentOptions(pickupRoutes, t),
@@ -479,41 +474,14 @@ export function InvoiceForm({
     setFormError(null);
   }
 
-  function updatePickupSource(next: InvoicePickupSource) {
-    if (next !== values.pickupSource) {
-      commitValues((current) => ({
-        ...current,
-        pickupSource: next,
-        routeId: next === "route" ? current.routeId : "",
-        routeCrewId: next === "route" ? current.routeCrewId : "",
-        routeCrewName: next === "route" ? current.routeCrewName : "",
-        officeBranchId: "",
-        officeBranchName: "",
-        pickupEmployeeId: "",
-        pickupEmployeeName: "",
-      }));
-      setPickupEmployeeQuery("");
-    }
-    setFormError(null);
-    if (isWizard) {
-      setPickupAssignmentOpenKey((key) => key + 1);
-    }
-  }
-
-  function updateReceivedVia(next: InvoiceReceivedViaChoice) {
-    if (invoicePickupSourceToReceivedVia(values.pickupSource) === next) {
-      setFormError(null);
-      if (isWizard && next !== "creator") {
-        setPickupAssignmentOpenKey((key) => key + 1);
-      }
-      return;
-    }
-    updatePickupSource(receivedViaToInvoicePickupSource(next));
-  }
-
   function updatePickupRoute(routeId: string) {
+    const supervisor = resolveDailyRouteSupervisor(pickupRoutes.find((route) => route.id === routeId));
     commitValues((current) => ({
       ...current,
+      ...invoiceSelfResponsibility(),
+      pickupSource: routeId ? "route" : isEditing && responsibility.canAssign ? "office" : "creator",
+      pickupEmployeeId: supervisor ? String(supervisor.id) : "",
+      pickupEmployeeName: supervisor?.name ?? "",
       routeId,
       routeCrewId: "",
       routeCrewName: "",
@@ -525,7 +493,8 @@ export function InvoiceForm({
     const employee = pickupSourceEmployees.find((entry) => String(entry.id) === employeeId);
     commitValues((current) => ({
       ...current,
-      pickupEmployeeId: employeeId,
+      pickupSource: employeeId === "self" ? "creator" : "office",
+      pickupEmployeeId: employeeId === "self" ? "" : employeeId,
       pickupEmployeeName: employee?.name ?? "",
       officeBranchId: employee ? String(employee.branch.id) : "",
       officeBranchName: employee
@@ -570,7 +539,7 @@ export function InvoiceForm({
   function applyCreatedEmployee(employee: Employee) {
     commitValues((current) => ({
       ...current,
-      pickupSource: current.pickupSource === "route" ? "office" : current.pickupSource,
+      pickupSource: "office",
       pickupEmployeeId: String(employee.id),
       pickupEmployeeName: employee.name,
       officeBranchId: String(employee.branch.id),
@@ -630,9 +599,9 @@ export function InvoiceForm({
       pickupSource: "route",
       routeId: route.id,
       routeCrewId: "",
-      routeCrewName: "",
-      pickupEmployeeId: "",
-      pickupEmployeeName: "",
+      routeCrewName: route.name,
+      pickupEmployeeId: String(resolveDailyRouteSupervisor(route)?.id ?? ""),
+      pickupEmployeeName: resolveDailyRouteSupervisor(route)?.name ?? "",
       officeBranchId: "",
       officeBranchName: "",
     }));
@@ -816,18 +785,6 @@ export function InvoiceForm({
 
   const pickupEmployeeFieldLabel = t("invoices.form.fields.supervisorEmployee");
   const pickupEmployeePlaceholder = t("invoices.form.placeholders.selectSupervisor");
-  const openPickupAssignment = isWizard && pickupAssignmentOpenKey > 0;
-  const receivedViaOptions = INVOICE_RECEIVED_VIA_CHOICES.filter(
-    (option) =>
-      (!isEditing || option.value !== "creator") &&
-      (responsibility.canAssign ||
-        option.value === "creator" ||
-        (option.value === "route" && pickupRoutes.length > 0)),
-  ).map((option) => ({
-    value: option.value,
-    label: t(option.labelKey),
-  }));
-
   function renderField(
     label: string,
     htmlFor: string | undefined,
@@ -932,96 +889,86 @@ export function InvoiceForm({
     )
   );
 
-  const responsibilityFields = responsibilityReadOnly ? (
-    <ReadOnlyField label={t("invoices.form.fields.pickupSource")}>
-      {values.pickupEmployeeName || values.routeCrewName || t("invoices.form.fields.pickupSourceCreator")}
-    </ReadOnlyField>
-  ) : (
+  const selectedRoute = pickupRoutes.find((route) => route.id === values.routeId);
+  const supervisorLabel = values.pickupEmployeeName || resolveDailyRouteSupervisor(selectedRoute)?.name ||
+    (values.pickupSource === "creator" ? responsibility.ownEmployee?.name || t("invoices.form.fields.pickupSourceCreator") : t("common.empty.dash"));
+  const responsibilityFields = (
     <>
-      {renderField(
-        t("invoices.form.fields.pickupSource"),
-        "pickupSource",
-        false,
-        <SegmentedControl
-          id="pickupSource"
-          aria-label={t("invoices.form.fields.pickupSource")}
-          value={receivedVia}
-          onValueChange={(next) => updateReceivedVia(next as InvoiceReceivedViaChoice)}
-          options={receivedViaOptions}
+      {responsibilityReadOnly ? (
+        <ReadOnlyField label={t("invoices.form.fields.pickupRoute")}>
+          {selectedRoute?.name || values.routeCrewName || values.routeId || t("common.empty.dash")}
+        </ReadOnlyField>
+      ) : renderField(
+        t("invoices.form.fields.pickupRoute"), "routeId", false,
+        <SearchableSelect
+          id="routeId"
+          value={values.routeId}
+          onValueChange={updatePickupRoute}
+          placeholder={t("invoices.form.placeholders.noPickupRoute")}
+          searchPlaceholder={t("invoices.form.placeholders.searchPickupRoutes")}
+          loading={pickupRoutesQuery.isFetching}
+          clearable
+          openOnNavigationFocus
+          {...(isWizard ? wizardSelectFieldProps(values.routeId) : {})}
+          options={[
+            { value: "", label: t("invoices.form.placeholders.noPickupRoute") },
+            ...(values.routeId && !selectedRoute ? [{ value: values.routeId, label: values.routeCrewName || values.routeId }] : []),
+            ...pickupRouteOptions,
+          ]}
         />,
+        undefined,
+        <FieldEntityActions onAdd={openAddRoute} addIcon={Route} />,
       )}
-      {receivedVia === "creator" ? (
-        <p className="text-sm text-muted-foreground">{t("invoices.form.hints.selfResponsibility")}</p>
-      ) : null}
-      {receivedVia === "route"
-        ? renderField(
-            t("invoices.form.fields.pickupRoute"),
-            "routeId",
-            true,
-            <SearchableSelect
-              key={isWizard ? `routeId-${pickupAssignmentOpenKey}` : "routeId"}
-              id="routeId"
-              value={values.routeId}
-              onValueChange={updatePickupRoute}
-              placeholder={t("invoices.form.placeholders.selectPickupRoute")}
-              searchPlaceholder={t("invoices.form.placeholders.searchPickupRoutes")}
-              loading={pickupRoutesQuery.isFetching}
-              required
-              autoFocus={openPickupAssignment}
-              defaultOpen={openPickupAssignment}
-              openOnNavigationFocus
-              {...(isWizard ? wizardSelectFieldProps(values.routeId) : {})}
-              options={[
-                { value: "", label: t("invoices.form.placeholders.selectPickupRoute") },
-                ...pickupRouteOptions.map((option) => ({
-                  value: option.value,
-                  label: option.label,
-                })),
-              ]}
-            />,
-            undefined,
-            <FieldEntityActions onAdd={openAddRoute} addIcon={Route} />,
-          )
-        : null}
-      {receivedVia === "supervisor"
-        ? renderField(
-            pickupEmployeeFieldLabel,
-            "pickupEmployeeId",
-            true,
-            <SearchableSelect
-              key={isWizard ? `pickupEmployeeId-${pickupAssignmentOpenKey}` : "pickupEmployeeId"}
-              id="pickupEmployeeId"
-              value={values.pickupEmployeeId}
-              onValueChange={updatePickupEmployee}
-              placeholder={pickupEmployeePlaceholder}
-              searchPlaceholder={t("invoices.form.placeholders.searchEmployees")}
-              manualFiltering
-              loading={pickupEmployeeSearch.isFetching || employeesQuery.isFetching}
-              onSearchChange={setPickupEmployeeQuery}
-              required
-              autoFocus={openPickupAssignment}
-              defaultOpen={openPickupAssignment}
-              {...(isWizard ? wizardSelectFieldProps(values.pickupEmployeeId) : {})}
-              options={[
-                ...(debouncedPickupEmployeeQuery
-                  ? []
-                  : [{ value: "", label: pickupEmployeePlaceholder }]),
-                ...pickupEmployeeOptions,
-              ]}
-            />,
-            undefined,
-            <FieldEntityActions onAdd={openAddEmployee} addIcon={UserPlus} />,
-          )
-        : null}
-      {receivedVia === "route" && values.routeId ? (
-        <p className="text-sm text-muted-foreground">
-          {t("invoices.form.fields.supervisor")}:{" "}
-          {resolveDailyRouteSupervisor(pickupRoutes.find((route) => route.id === values.routeId))?.name ||
-            "—"}
-        </p>
-      ) : null}
+      {values.routeId || responsibilityReadOnly || !responsibility.canAssign ? (
+        <ReadOnlyField label={pickupEmployeeFieldLabel}>{supervisorLabel}</ReadOnlyField>
+      ) : renderField(
+        pickupEmployeeFieldLabel, "pickupEmployeeId", true,
+        <SearchableSelect
+          id="pickupEmployeeId"
+          value={values.pickupSource === "creator" ? "self" : values.pickupEmployeeId}
+          onValueChange={updatePickupEmployee}
+          placeholder={pickupEmployeePlaceholder}
+          searchPlaceholder={t("invoices.form.placeholders.searchEmployees")}
+          manualFiltering
+          loading={pickupEmployeeSearch.isFetching || employeesQuery.isFetching}
+          onSearchChange={setPickupEmployeeQuery}
+          required
+          openOnNavigationFocus
+          {...(isWizard ? wizardSelectFieldProps(values.pickupEmployeeId) : {})}
+          options={[
+            ...(!isEditing && !pickupEmployeeQuery.trim() ? [{ value: "self", label: t("invoices.form.fields.pickupSourceCreator") }] : []),
+            ...pickupEmployeeOptions,
+          ]}
+        />,
+        undefined,
+        <FieldEntityActions onAdd={openAddEmployee} addIcon={UserPlus} />,
+      )}
     </>
   );
+
+  const paymentLocationField = showPaymentLocation
+    ? renderField(
+        t("invoices.form.fields.paymentLocation"),
+        "paymentLocation",
+        true,
+        <SearchableSelect
+          id="paymentLocation"
+          value={mapPaymentLocationToPaidRegion(values.paymentLocation)}
+          onValueChange={(next) =>
+            updateField("paymentLocation", next as InvoiceFormValues["paymentLocation"])
+          }
+          placeholder={t("invoices.form.placeholders.selectPaymentLocation")}
+          searchPlaceholder={t("invoices.form.placeholders.searchPaymentLocations")}
+          {...(isWizard ? wizardSelectFieldProps(values.paymentLocation) : {})}
+          required
+          loading={branchesLoading}
+          options={branches.filter((branch) => branch.code.trim()).map((branch) => ({
+            value: branch.code.trim().toUpperCase(),
+            label: branch.code.trim().toUpperCase(),
+          }))}
+        />,
+      )
+    : null;
 
   const detailsFields = (
     <div className="grid min-w-0 grid-cols-1 gap-4">
@@ -1061,33 +1008,10 @@ export function InvoiceForm({
         undefined,
         <FieldEntityActions onAdd={openAddContainer} addIcon={ContainerIcon} />,
       )}
+      {paymentLocationField}
       {responsibilityFields}
     </div>
   );
-
-  const paymentLocationField = showPaymentLocation
-    ? renderField(
-        t("invoices.form.fields.paymentLocation"),
-        "paymentLocation",
-        true,
-        <SearchableSelect
-          id="paymentLocation"
-          value={mapPaymentLocationToPaidRegion(values.paymentLocation)}
-          onValueChange={(next) =>
-            updateField("paymentLocation", next as InvoiceFormValues["paymentLocation"])
-          }
-          placeholder={t("invoices.form.placeholders.selectPaymentLocation")}
-          searchPlaceholder={t("invoices.form.placeholders.searchPaymentLocations")}
-          {...(isWizard ? wizardSelectFieldProps(values.paymentLocation) : {})}
-          required
-          loading={branchesLoading}
-          options={branches.filter((branch) => branch.code.trim()).map((branch) => ({
-            value: branch.code.trim().toUpperCase(),
-            label: branch.code.trim().toUpperCase(),
-          }))}
-        />,
-      )
-    : null;
 
   const dash = t("common.empty.dash");
   const assignedContainer = containers.find((container) => String(container.id) === values.containerId);
@@ -1112,6 +1036,11 @@ export function InvoiceForm({
               ? formatContainerIdLabel(values.containerId)
               : dash}
         </ReadOnlyField>
+        {showPaymentLocation ? (
+          <ReadOnlyField label={t("invoices.form.fields.paymentLocation")}>
+            {getPaymentLocationLabel(values.paymentLocation) || dash}
+          </ReadOnlyField>
+        ) : null}
         {responsibilityFields}
       </div>
     </div>
@@ -1331,11 +1260,6 @@ export function InvoiceForm({
                     requestEditLineItemId={requestEditLineItemId}
                   />
                 </div>
-                {paymentLocationField ? (
-                  <div className={isPhoneWizard ? undefined : "min-w-0 rounded-xl border border-border bg-card p-5 shadow-sm"}>
-                    {paymentLocationField}
-                  </div>
-                ) : null}
               </>
             ) : (
               <FormSection variant="card" description={t("invoices.form.design.itemsHint")} icon={ClipboardList} title={t("invoices.form.sections.description")}>
@@ -1344,7 +1268,6 @@ export function InvoiceForm({
                   catalogItems={catalogItems}
                   onChange={(lineItems) => updateField("lineItems", lineItems)}
                 />
-                {paymentLocationField}
               </FormSection>
             )
           ) : null}

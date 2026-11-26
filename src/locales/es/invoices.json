@@ -6,13 +6,13 @@
     "sort": "Ordenar por",
     "asc": "Ascendente",
     "desc": "Descendente",
-    "receivedAt": "Recibido el",
+    "receivedAt": "Fecha de recepción en el dispositivo",
     "filterUser": "Filtrar por usuario",
     "allUsers": "Todos los usuarios",
     "search": "Buscar números reservados",
     "searchPlaceholder": "Escribe un número de factura…",
     "selectAll": "Seleccionar todos los números disponibles de esta página",
-    "title": "Asignar facturas",
+    "title": "Asignar números de factura",
     "description": "Genere números de factura para uso móvil sin conexión y asígnelos a usuarios.",
     "loading": "Cargando facturas para asignar…",
     "denied": "No tiene permiso para ver los grupos de facturas.",
@@ -48,7 +48,7 @@
     "next": "Siguiente",
     "generationNotice": "Los números generados se agregaron a la reserva de la empresa sin asignar. Selecciónelos abajo y luego elija un usuario para asignarlos.",
     "unassigned": "Sin asignar",
-    "user": "Usuario",
+    "user": "Usuario asignado al número",
     "searchUser": "Buscar usuarios activos",
     "selectedUser": "Usuario seleccionado",
     "noUsers": "No hay usuarios activos que coincidan con la búsqueda.",
@@ -139,8 +139,8 @@
     "discount": "Descuento",
     "amountPaid": "Pago",
     "balance": "Balance",
-    "pickupAssignment": "Recibido por",
-    "createdBy": "Creado por",
+    "pickupAssignment": "Supervisor de recogida",
+    "createdBy": "Digitado por",
     "createdAt": "Creado el"
   },
   "search": {
@@ -221,7 +221,7 @@
       "pending": "Pendiente",
       "paymentLocation": "¿Dónde se pagará esta factura?",
       "createdAt": "Creado el",
-      "createdBy": "Creado por",
+      "createdBy": "Digitado por",
       "sender": "Remitente",
       "receiver": "Destinatario",
       "pickupReference": "Referencia de recogida",
@@ -232,10 +232,10 @@
       "pickupSourceRoute": "Ruta diaria",
       "pickupSourceWarehouse": "Almacén",
       "pickupSourceOffice": "Oficina",
-      "pickupRoute": "Ruta diaria",
+      "pickupRoute": "Ruta diaria de recogida",
       "warehouseEmployee": "Empleado de almacén",
       "officeEmployee": "Empleado de oficina",
-      "supervisorEmployee": "Supervisor"
+      "supervisorEmployee": "Supervisor de recogida"
     },
     "placeholders": {
       "invoiceNumber": "INV-2026-0001",
@@ -363,7 +363,6 @@
     "actions": {
       "back": "Atrás",
       "print": "Imprimir",
-      "printInvoice": "Imprimir factura",
       "preparing": "Preparando…"
     },
     "validation": {
@@ -568,8 +567,16 @@
     }
   },
   "view": {
+    "tabs": "Vistas de factura",
+    "tracking": "Seguimiento",
+    "totals": "Totales",
     "system": "Sistema",
-    "pickupAssignment": "Recibido por",
+    "pickupAssignment": "Supervisor de recogida",
+    "actions": {
+      "editInvoiceDetails": "Editar detalles de factura",
+      "editLineItems": "Editar artículos",
+      "editTotals": "Editar costo"
+    },
     "fields": {
       "documentId": "Doc",
       "phones": "Teléfonos",
@@ -590,6 +597,7 @@
       "pendingPaymentCount_one": "{{count}} pago",
       "pendingPaymentCount_other": "{{count}} pagos",
       "balanceAfterClearance": "Saldo después de compensar",
+      "balanceToClear": "Saldo por compensar",
       "pendingClearanceHint": "Estos pagos se recibieron del cliente pero aún no se han compensado. El saldo pendiente de arriba es el saldo contabilizado; bajará al saldo después de compensar cuando se compensen.",
       "clientUnpaid": "Sin pagar",
       "clientPartiallyPaid": "Pago parcial",
@@ -806,7 +814,7 @@
       },
       "createdBy": {
         "name": {
-          "label": "Creada por"
+          "label": "Digitado por"
         }
       },
       "route": {
@@ -858,9 +866,11 @@
         "label": "Registro",
         "placeholder": "Escriba el registro…"
       },
+      "supervisor": { "name": { "label": "Supervisor de recogida" } },
+      "dailyRoute": { "name": { "label": "Ruta diaria de recogida" } },
       "receivedBy": {
         "name": {
-          "label": "Recibido por",
+          "label": "Referencia de recogida anterior",
           "placeholder": "Escriba el nombre…"
         }
       },

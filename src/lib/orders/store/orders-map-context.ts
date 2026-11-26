@@ -11,6 +11,8 @@ import {
 const ORDERS_MAP_CONTEXT_KEY = "emsys-orders-map-context";
 
 export type OrdersMapContext = {
+  routeEmployee?: string;
+  routeScopeKey?: string;
   filters: OrderFilterState;
   sort: OrderListParams["sort"];
   selectedIds: string[];
@@ -42,6 +44,8 @@ export function readOrdersMapContext(): OrdersMapContext | null {
   try {
     const parsed = JSON.parse(raw) as Partial<OrdersMapContext>;
     return {
+      routeEmployee: typeof parsed.routeEmployee === "string" ? parsed.routeEmployee : undefined,
+      routeScopeKey: parsed.routeScopeKey,
       filters: {
         query: typeof parsed.filters?.query === "string" ? parsed.filters.query : "",
         rows: Array.isArray(parsed.filters?.rows) ? parsed.filters.rows : [],

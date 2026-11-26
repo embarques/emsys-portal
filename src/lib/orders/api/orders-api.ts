@@ -522,6 +522,10 @@ function buildPickupSearchBody(params: OrderListParams) {
 export async function fetchOrders(params: OrderListParams = {}): Promise<PaginatedResult<Order>> {
   return fetchPaginatedResourceList({
     endpoint: API_ENDPOINTS.PICKUPS,
+    client: params.routeEmployee ? {
+      get: (url, config) => apiClient.get(url, { ...config, params: { routeEmployee: params.routeEmployee } }),
+      post: (url, body, config) => apiClient.post(url, body, { ...config, params: { routeEmployee: params.routeEmployee } }),
+    } : undefined,
     page: params.page ?? DEFAULT_ORDER_LIST_PARAMS.page,
     limit: params.limit ?? DEFAULT_ORDER_LIST_PARAMS.limit,
     offset: params.offset,

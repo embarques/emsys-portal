@@ -40,6 +40,10 @@ and compact density.
 
 - **Density:** `DataTable` uses **compact** (portal default). Do not pass
   `density="default"` on directory tables.
+- **Cell vertical alignment:** All `th` / `td` content uses **`align-middle`**.
+  Do not pass `align-top` (or other vertical-align overrides) via
+  `cellClassName` / `headerClassName`. Nested cell chrome (icons, badges,
+  checkboxes, action buttons) should use `items-center` when laid out in flex.
 - **Card / header / footer:** See `table-header-divider-spacing.mdc`.
 - **Sizing:** Content-first height; no viewport `min-h` stretch — see
   `table-directory-sizing.mdc`.
@@ -66,6 +70,7 @@ and compact density.
 
 - [ ] `Card` has `gap-0`; `CardHeader` is `gap-3 border-b py-4 pb-3`
 - [ ] Compact `DataTable` (default or explicit)
+- [ ] Cells use `align-middle` (no `align-top` overrides)
 - [ ] Error banners use `border-b px-6 py-3`
 - [ ] Footer is `border-t px-6 py-4` + `TablePaginationControls` (or catalog
       equivalent)

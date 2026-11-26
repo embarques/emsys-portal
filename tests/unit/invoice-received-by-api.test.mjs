@@ -58,12 +58,14 @@ for (const method of ["createInvoice", "updateInvoice"]) {
     : api[method](values, context);
    await assert.rejects(request, (error) => error === stop);
    if (source === "route") {
+    assert.equal(payload.dailyRouteId,"daily-route-1");
     assert.equal(payload.receivedBy.id,"daily-route-1");
     assert.equal(Object.hasOwn(payload.receivedBy,"route"),false);
     assert.equal(payload.routeCrew,method === "updateInvoice" ? null : undefined);
    } else {
     assert.equal(payload.receivedBy.id,"73");
     assert.equal(payload.receivedBy.name,"Maria");
+    assert.equal(payload.supervisor.id,73);
     assert.equal(payload.employee.id,73);
     assert.equal(payload.pickupEmployee.id,73);
    }

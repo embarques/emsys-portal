@@ -7,7 +7,7 @@
   "submenus": {
     "pickups": "Pickups",
     "orders": "Appointments",
-    "reservedInvoices": "Assign",
+    "reservedInvoices": "Assign invoice numbers",
     "invoices": "Invoices",
     "routes": "Routes",
     "routeManager": "Routes",
@@ -60,7 +60,7 @@
     "employees": "Employees",
     "userActivities": "User Activity",
     "branches": "Branches",
-    "barcodeStatuses": "Manage Barcode Statuses",
+    "barcodeStatuses": "Barcode statuses",
     "settings": "Settings",
     "employeeDepartments": "Employee departments",
     "employeeTitles": "Employee titles",
@@ -68,7 +68,7 @@
     "pendingInventoryTransactions": "Pending Transactions",
     "pendingFinancialActivity": "Pending Reconciliation",
     "pendingClearance": "Pending Clearance",
-    "reservedInvoices": "Assign invoices",
+    "reservedInvoices": "Assign invoice numbers",
     "changeRequests": "Change requests"
   },
   "badges": {

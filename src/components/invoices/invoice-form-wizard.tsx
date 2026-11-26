@@ -35,7 +35,10 @@ import {
 import { invoiceWizardTypographyRoot } from "@/components/invoices/invoice-wizard-typography";
 import { Button } from "@/components/ui/button";
 import { useIsMobileViewport } from "@/hooks/use-is-mobile-viewport";
-import { getNavigableFormFields } from "@/hooks/use-form-enter-navigation";
+import {
+  focusWithoutOpeningCombobox,
+  getNavigableFormFields,
+} from "@/hooks/use-form-enter-navigation";
 import { useWorkspaceTabQueriesEnabled } from "@/lib/layout/workspace-tab-scope";
 import { buildDailyIncomeWorkspaceHref } from "@/lib/accounting/daily-income/workspace-href";
 import {
@@ -231,7 +234,9 @@ export function InvoiceFormWizard({
       const first = step === previewStep
         ? root.querySelector<HTMLElement>('[data-wizard-primary]')
         : fields[0] ?? root.querySelector<HTMLElement>('[data-wizard-primary]');
-      first?.focus();
+      // Programmatic step focus must not open SearchableSelect lists (e.g. payment
+      // location on the line-items step when it is the first navigable field).
+      if (first) focusWithoutOpeningCombobox(first);
     }, 100);
     return () => window.clearTimeout(timeout);
   }, [step, previewStep, isTabActive, isMobileLayout, formSessionKey, focusFieldId]);
@@ -251,11 +256,8 @@ export function InvoiceFormWizard({
     [t],
   );
   const findStep3Issue = useCallback(
-    (formValues: InvoiceFormValues) =>
-      findInvoiceWizardStep3Issue(formValues, t, {
-        requirePaymentLocation: paymentStepId == null,
-      }),
-    [paymentStepId, t],
+    (formValues: InvoiceFormValues) => findInvoiceWizardStep3Issue(formValues, t),
+    [t],
   );
 
   useEffect(() => {
@@ -719,7 +721,7 @@ export function InvoiceFormWizard({
       requestEditLineItemId={step === 3 ? requestEditLineItemId : null}
       defaultToLatestContainer={!isEditing}
       assignedMode={assignedMode}
-      showPaymentLocation={!requireDailyIncomeRegistration}
+      showPaymentLocation
     />
   );
 

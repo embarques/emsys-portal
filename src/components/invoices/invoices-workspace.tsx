@@ -2,17 +2,21 @@
 
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 
+import Link from "next/link";
 import { useMemo, useState } from "react";
 import {
   Check,
   CircleAlert,
+  FilePenLine,
   FileText,
   Filter,
   Plus,
+  Printer,
   Receipt,
   RefreshCw,
   Search,
   Loader2,
+  Tags,
 } from "lucide-react";
 
 import { InvoiceCreateWizard, InvoiceEditWizard } from "@/components/invoices/invoice-form-workspace";
@@ -20,6 +24,7 @@ import {
   TableSelectionActionsMenu,
   TableSelectionActionItem
 } from "@/components/app-shell/table-selection-actions-menu";
+import { InvoiceDocumentsButton } from "@/components/invoices/invoice-documents-button";
 import { InvoiceLineItemsCell } from "@/components/invoices/invoice-line-items-cell";
 import { InvoiceViewSheet } from "@/components/invoices/invoice-view-sheet";
 import { DataTable } from "@/components/app-shell/data-table";
@@ -47,7 +52,11 @@ import { useApiTableColumns } from "@/components/app-shell/use-api-table-columns
 import { INVOICE_API_TABLE_FIELDS } from "@/lib/invoices/table-fields";
 import { Button } from "@/components/ui/button";
 
-import { tableSelectionActionMenuStyles } from "@/lib/table/selection-action-styles";
+import {
+  tableSelectionActionMenuStyles,
+  tableSelectionActionStyles,
+} from "@/lib/table/selection-action-styles";
+import { changeRequestHref } from "@/lib/change-requests/utils/navigation";
 import { Card, CardHeader } from "@/components/ui/card";
 import {
   Dialog,
@@ -80,7 +89,6 @@ import {
   getInvoiceSubtotal,
   getInvoiceTotalMoneyClass,
   getPaymentLocationLabel,
-  formatInvoicePickupAssignmentLabel,
   resolveInvoicePaidStatus,
 } from "@/lib/invoices/display";
 import { buildInvoiceCommentActivity } from "@/lib/invoices/activity";
@@ -408,6 +416,7 @@ export function InvoicesWorkspace() {
   const [deleteTarget, setDeleteTarget] = useState<Invoice | Invoice[] | null>(null);
   const [addFormOpen, setAddFormOpen] = useState(false);
   const [editInvoiceId, setEditInvoiceId] = useState<string | null>(null);
+  const [editWizardStep, setEditWizardStep] = useState<number | undefined>(undefined);
 
   const { openTab, openFormTab, isDesktopTabs } = useWorkspaceTabs();
   const canViewBarcodes = hasPermission(
@@ -432,7 +441,10 @@ export function InvoicesWorkspace() {
     setAddFormOpen(true);
   }
 
-  function openEditForm(invoice: Invoice) {
+  function openEditForm(
+    invoice: Invoice,
+    options?: { initialWizardStep?: number },
+  ) {
     closeView();
     if (isDesktopTabs) {
       openFormTab({
@@ -441,9 +453,13 @@ export function InvoicesWorkspace() {
         mode: "edit",
         entityId: getInvoiceRecordId(invoice),
         label: formatInvoiceTabLabel(invoice, t("invoices.workspace.untitledTab")),
+        ...(options?.initialWizardStep != null
+          ? { initialWizardStep: options.initialWizardStep }
+          : {}),
       });
       return;
     }
+    setEditWizardStep(options?.initialWizardStep);
     setEditInvoiceId(getInvoiceRecordId(invoice));
   }
 
@@ -583,22 +599,71 @@ export function InvoicesWorkspace() {
   }
 
   const canViewInvoices = hasPermission(PERMISSIONS.invoicesView.name, PERMISSIONS.invoicesView.resourceType);
-  const documentsSelectionAction = canViewInvoices ? (
-    <TableSelectionActionsMenu>
-      <TableSelectionActionItem
-        disabled={selectedCount !== 1 || !selectedInvoices[0]}
-        onSelect={() => {
-          const invoice = selectedInvoices[0];
-          if (!invoice || selectedCount !== 1) return;
-          openView(invoice, { documents: true });
-        }}
-        className={tableSelectionActionMenuStyles.documents}
-      >
-        <FileText className="size-4" />
-        {t("invoices.documents.title")}
-      </TableSelectionActionItem>
-    </TableSelectionActionsMenu>
-  ) : null;
+  const allowRequestChange = hasPermission("canCreateChangeRequest", "change_request");
+  const selectedInvoice = selectedCount === 1 ? selectedInvoices[0] : undefined;
+
+  /** Fresh tree per toolbar (mobile + desktop); do not reuse one React element. */
+  function renderInvoiceSelectionActions() {
+    return (
+      <>
+        {canPrintInvoices ? (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className={cn("whitespace-nowrap", tableSelectionActionStyles.print)}
+            disabled={
+              isPrinting ||
+              selectedCount === 0 ||
+              selectedInvoices.length !== selectedCount
+            }
+            onClick={() => {
+              const ids = selectedInvoices
+                .map((invoice) => invoice.invoiceId)
+                .filter(Boolean);
+              if (ids.length === 0) return;
+              setPrintInvoiceIds(ids);
+            }}
+          >
+            <Printer className="size-4" />
+            {isPrinting
+              ? t("invoices.wizard.actions.preparing")
+              : t("invoices.wizard.actions.print")}
+          </Button>
+        ) : null}
+        {canViewInvoices ? (
+          <InvoiceDocumentsButton
+            invoice={selectedInvoice}
+            selectedCount={selectedCount}
+            onOpen={(invoice) => openView(invoice, { documents: true })}
+          />
+        ) : null}
+        <TableSelectionActionsMenu>
+          {canViewBarcodes ? (
+            <TableSelectionActionItem
+              disabled={selectedCount === 0 || selectedInvoices.length !== selectedCount}
+              onSelect={() => openManageItemsFor(selectedInvoices)}
+              className={tableSelectionActionMenuStyles.documents}
+            >
+              <Tags className="size-4" />
+              {t("invoices.staging.tableAction")}
+            </TableSelectionActionItem>
+          ) : null}
+          {allowRequestChange && selectedInvoice ? (
+            <TableSelectionActionItem
+              asChild
+              className={tableSelectionActionMenuStyles.request}
+            >
+              <Link href={changeRequestHref("invoice", selectedInvoice.invoiceId)}>
+                <FilePenLine className="size-4" />
+                {t("accounting.journalLifecycle.request")}
+              </Link>
+            </TableSelectionActionItem>
+          ) : null}
+        </TableSelectionActionsMenu>
+      </>
+    );
+  }
 
   function addInvoiceComment(invoiceId: string, description: string) {
     const comment = createInvoiceComment(description);
@@ -843,7 +908,6 @@ export function InvoicesWorkspace() {
       label: t("invoices.columns.senderPhone"),
       defaultWidth: 260,
       truncateCell: false,
-      cellClassName: "align-top",
       renderCell: (invoice) => <InvoicePartyPhoneCell party={invoice.sender} />,
     },
     {
@@ -852,7 +916,7 @@ export function InvoicesWorkspace() {
       sortField: "sender.address.address1",
       defaultWidth: 340,
       truncateCell: false,
-      cellClassName: cn(ADDRESS_TEXT_WRAP_CLASSNAME, "align-top"),
+      cellClassName: ADDRESS_TEXT_WRAP_CLASSNAME,
       renderCell: (invoice) => <InvoicePartyAddressCell party={invoice.sender} />,
     },
     {
@@ -870,7 +934,6 @@ export function InvoicesWorkspace() {
       label: t("invoices.columns.receiverPhone"),
       defaultWidth: 260,
       truncateCell: false,
-      cellClassName: "align-top",
       renderCell: (invoice) => <InvoicePartyPhoneCell party={getInvoicePrimaryReceiver(invoice)} />,
     },
     {
@@ -879,7 +942,7 @@ export function InvoicesWorkspace() {
       sortField: "receiver.address.address1",
       defaultWidth: 340,
       truncateCell: false,
-      cellClassName: cn(ADDRESS_TEXT_WRAP_CLASSNAME, "align-top"),
+      cellClassName: ADDRESS_TEXT_WRAP_CLASSNAME,
       renderCell: (invoice) => (
         <InvoicePartyAddressCell party={getInvoicePrimaryReceiver(invoice)} />
       ),
@@ -958,7 +1021,13 @@ export function InvoicesWorkspace() {
       label: t("invoices.columns.pickupAssignment"),
       defaultVisible: false,
       renderCell: (invoice) =>
-        formatInvoicePickupAssignmentLabel(invoice, t, t("common.empty.dash")),
+        invoice.supervisor?.name || invoice.pickupEmployeeName || t("common.empty.dash"),
+    },
+    {
+      id: "dailyRoute",
+      label: t("invoices.form.fields.pickupRoute"),
+      defaultVisible: false,
+      renderCell: (invoice) => invoice.dailyRouteName || (invoice.pickupSource === "route" && invoice.routeName) || t("common.empty.dash"),
     },
     {
       id: "createdBy",
@@ -1126,7 +1195,7 @@ export function InvoicesWorkspace() {
             canDelete={canDeleteInvoices}
             deleteDisabled={isDeleting || deleteBlockedCount > 0}
             meta={deleteBlockedNote}
-            actions={documentsSelectionAction}
+            actions={renderInvoiceSelectionActions()}
           />
         ) : null}
 
@@ -1275,7 +1344,7 @@ export function InvoicesWorkspace() {
           canDelete={canDeleteInvoices}
           deleteDisabled={isDeleting || deleteBlockedCount > 0}
           meta={deleteBlockedNote}
-          actions={documentsSelectionAction}
+          actions={renderInvoiceSelectionActions()}
         />
 
         {isError ? (
@@ -1354,7 +1423,7 @@ export function InvoicesWorkspace() {
         onOpenChange={(open) => {
           if (!open) closeView();
         }}
-        onEdit={(invoice) => openEditForm(invoice)}
+        onEdit={(invoice, options) => openEditForm(invoice, options)}
         onDelete={(invoice) => openDeleteInvoice(invoice)}
         canEdit={canUpdateInvoices}
         canDelete={canDeleteInvoices}
@@ -1388,7 +1457,10 @@ export function InvoicesWorkspace() {
       <Dialog
         open={editInvoiceId !== null}
         onOpenChange={(open) => {
-          if (!open) setEditInvoiceId(null);
+          if (!open) {
+            setEditInvoiceId(null);
+            setEditWizardStep(undefined);
+          }
         }}
       >
         <DialogContent className={invoiceWizardDialogClassName}>
@@ -1407,9 +1479,14 @@ export function InvoicesWorkspace() {
           <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
             {editInvoiceId ? (
               <InvoiceEditWizard
+                key={`${editInvoiceId}-${editWizardStep ?? "default"}`}
                 inDialog
                 invoiceId={editInvoiceId}
-                onCancel={() => setEditInvoiceId(null)}
+                initialWizardStep={editWizardStep}
+                onCancel={() => {
+                  setEditInvoiceId(null);
+                  setEditWizardStep(undefined);
+                }}
               />
             ) : null}
           </div>

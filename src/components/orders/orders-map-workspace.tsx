@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useFormViewport } from "@/hooks/use-form-viewport";
 
+import { useRouteAppointmentsAccess } from "@/lib/orders/hooks/use-route-appointments-access";
 import { OrdersMapView } from "@/components/orders/orders-map-view";
 import { PageHeader } from "@/components/app-shell/page-header";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
@@ -21,6 +22,8 @@ import type { AppointmentRouteStopOrder } from "@/lib/orders/utils/appointment-r
 import { useTranslation } from "@/lib/i18n";
 
 export function OrdersMapWorkspace({ routeMode = false }: { routeMode?: boolean } = {}) {
+  const { scopeKey, canViewAll } = useRouteAppointmentsAccess();
+  const [routeEmployee, setRouteEmployee] = useState("me");
   const viewportRef = useFormViewport();
   const { t } = useTranslation();
   const { notifySuccess, notifyError } = useFeedback();
@@ -37,12 +40,13 @@ export function OrdersMapWorkspace({ routeMode = false }: { routeMode?: boolean 
     if (!mapActive) return;
 
     const context = readOrdersMapContext() ?? DEFAULT_ORDERS_MAP_CONTEXT;
+    setRouteEmployee(canViewAll && context.routeScopeKey === scopeKey ? context.routeEmployee || "me" : "me");
     setFilters(context.filters);
     setSort(context.sort);
     setSelectedIds(context.selectedIds);
     setStopOrder(context.stopOrder ?? null);
     setDailyRouteId(context.dailyRouteId ?? null);
-  }, [mapActive, tabScope?.tabId]);
+  }, [mapActive, tabScope?.tabId, scopeKey, canViewAll]);
 
   const mapTitle = dailyRouteId ? t("orders.map.dailyRouteTitle") : t("orders.map.title");
   const mapDescription = dailyRouteId
@@ -61,7 +65,7 @@ export function OrdersMapWorkspace({ routeMode = false }: { routeMode?: boolean 
 
   function handleStopOrderChange(nextStopOrder: AppointmentRouteStopOrder | null) {
     setStopOrder(nextStopOrder);
-    writeOrdersMapContext({ filters, sort, selectedIds, stopOrder: nextStopOrder, dailyRouteId });
+    writeOrdersMapContext({ routeEmployee, routeScopeKey: scopeKey, filters, sort, selectedIds, stopOrder: nextStopOrder, dailyRouteId });
   }
 
   async function handleUnassignRoute(ordersToClear: Order[]) {
@@ -92,6 +96,7 @@ export function OrdersMapWorkspace({ routeMode = false }: { routeMode?: boolean 
         <PageHeader title={mapTitle} description={mapDescription} />
       </div>
       <OrdersMapView
+        routeEmployee={routeMode ? routeEmployee : undefined}
         allowRouteManagement={!routeMode}
         active={mapActive}
         filters={filters}

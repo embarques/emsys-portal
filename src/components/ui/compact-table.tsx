@@ -14,13 +14,13 @@ export const compactTableHeadRowClassName =
   "border-b bg-muted/40 text-muted-foreground";
 
 export const compactTableHeadClassName =
-  "sticky top-0 z-[1] whitespace-nowrap border-b border-border bg-muted px-2 py-1.5 text-left font-medium";
+  "sticky top-0 z-[1] whitespace-nowrap border-b border-border bg-muted px-2 py-1.5 text-left align-middle font-medium";
 
 export const compactTableCellClassName =
-  "whitespace-nowrap px-2 py-1 text-foreground";
+  "whitespace-nowrap px-2 py-1 align-middle text-foreground";
 
 export const compactTableCellWrapClassName =
-  "min-w-[10rem] px-2 py-1 leading-snug text-foreground [overflow-wrap:anywhere]";
+  "min-w-[10rem] px-2 py-1 align-middle leading-snug text-foreground [overflow-wrap:anywhere]";
 
 export const compactTableRowClassName =
   "border-b last:border-b-0 even:bg-muted/25";

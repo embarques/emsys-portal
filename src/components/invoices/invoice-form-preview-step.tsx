@@ -36,9 +36,6 @@ import { useContainerPicker } from "@/lib/containers/hooks/use-containers";
 import { formatInvoiceDate, formatInvoiceMoney, getPaymentLocationLabel } from "@/lib/invoices/display";
 import {
   computeInvoiceBalance,
-  INVOICE_RECEIVED_VIA_CHOICES,
-  invoicePickupSourceToReceivedVia,
-  isInvoiceEmployeePickupSource,
   resolveLineLabelCount,
   resolveLineTotal,
   type InvoiceFormValues,
@@ -46,7 +43,7 @@ import {
 import { useTranslation } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import { useItemPicker } from "@/lib/items/hooks/use-items";
-import { formatActiveRouteAssignmentLabel } from "@/lib/pickup-delivery-routes/display";
+import { resolveDailyRouteSupervisor } from "@/lib/accounting/daily-income/assignee";
 import { useActiveRoutePicker } from "@/lib/pickup-delivery-routes/hooks/use-pickup-delivery-routes";
 import { DEFAULT_ORDER_LIST_PARAMS } from "@/lib/orders/types";
 import { useOrder, useOrders } from "@/lib/orders/hooks/use-orders";
@@ -106,40 +103,10 @@ function usePreviewLabels(values: InvoiceFormValues) {
 
   const pickupFieldLabel = t("invoices.form.fields.pickupReference");
 
-  const pickupAssignmentLabel = useMemo(() => {
-    if (isInvoiceEmployeePickupSource(values.pickupSource)) {
-      const employee = values.pickupEmployeeName.trim() || values.pickupEmployeeId;
-      if (!employee) return t("invoices.form.preview.noEmployeeAssignment");
-      const branch = values.officeBranchName.trim();
-      return branch ? `${employee} · ${branch}` : employee;
-    }
-
-    if (!values.routeId) return t("invoices.form.placeholders.noPickupRoute");
-    const route = pickupRoutes.find((entry) => entry.id === values.routeId);
-    return route ? formatActiveRouteAssignmentLabel(route, t) : values.routeCrewName.trim() || values.routeId;
-  }, [
-    pickupRoutes,
-    t,
-    values.routeCrewName,
-    values.officeBranchName,
-    values.pickupEmployeeId,
-    values.pickupEmployeeName,
-    values.pickupSource,
-    values.routeId,
-  ]);
-
-  const pickupAssignmentFieldLabel = useMemo(() => {
-    if (isInvoiceEmployeePickupSource(values.pickupSource)) {
-      return t("invoices.form.fields.supervisorEmployee");
-    }
-    return t("invoices.form.fields.pickupRoute");
-  }, [t, values.pickupSource]);
-
-  const pickupSourceLabel = useMemo(() => {
-    const choice = invoicePickupSourceToReceivedVia(values.pickupSource);
-    const option = INVOICE_RECEIVED_VIA_CHOICES.find((entry) => entry.value === choice);
-    return option ? t(option.labelKey) : t("invoices.form.fields.pickupSource");
-  }, [t, values.pickupSource]);
+  const pickupRoute = pickupRoutes.find((route) => route.id === values.routeId);
+  const pickupRouteLabel = pickupRoute?.name || values.routeCrewName || values.routeId || t("invoices.form.placeholders.noPickupRoute");
+  const supervisorLabel = values.pickupEmployeeName || resolveDailyRouteSupervisor(pickupRoute)?.name ||
+    (values.pickupSource === "creator" ? t("invoices.form.fields.pickupSourceCreator") : t("common.empty.dash"));
 
   const subtotal = useMemo(
     () => values.lineItems.reduce((sum, item) => sum + resolveLineTotal(item), 0),
@@ -158,9 +125,8 @@ function usePreviewLabels(values: InvoiceFormValues) {
     containerLabel,
     pickupLabel,
     pickupFieldLabel,
-    pickupAssignmentLabel,
-    pickupAssignmentFieldLabel,
-    pickupSourceLabel,
+    supervisorLabel,
+    pickupRouteLabel,
     subtotal,
     discount,
     amountPaid,
@@ -436,9 +402,8 @@ function InvoiceWizardCheckoutReview({
     containerLabel,
     pickupLabel,
     pickupFieldLabel,
-    pickupAssignmentLabel,
-    pickupAssignmentFieldLabel,
-    pickupSourceLabel,
+    supervisorLabel,
+    pickupRouteLabel,
     subtotal,
     discount,
     amountPaid,
@@ -498,14 +463,14 @@ function InvoiceWizardCheckoutReview({
             <h4 className="text-sm font-semibold text-foreground">{t("invoices.wizard.review.shipment")}</h4>
             <dl className="grid gap-4 @2xl:grid-cols-2">
               <ReviewDetail label={t("invoices.wizard.review.container")}>{containerLabel}</ReviewDetail>
-              <ReviewDetail label={t("invoices.form.fields.pickupSource")}>{pickupSourceLabel}</ReviewDetail>
+              <ReviewDetail label={t("invoices.form.fields.pickupRoute")}>{pickupRouteLabel}</ReviewDetail>
               <ReviewDetail label={pickupFieldLabel} className="@2xl:col-span-2">
                 {values.pickupId ? pickupLabel : (
                   <InvoiceWizardReviewOptionalMissing>{pickupLabel}</InvoiceWizardReviewOptionalMissing>
                 )}
               </ReviewDetail>
-              <ReviewDetail label={pickupAssignmentFieldLabel} className="@2xl:col-span-2">
-                {pickupAssignmentLabel}
+              <ReviewDetail label={t("invoices.form.fields.supervisorEmployee")} className="@2xl:col-span-2">
+                {supervisorLabel}
               </ReviewDetail>
             </dl>
           </div>
@@ -763,7 +728,7 @@ export function InvoiceFormPreviewStep({
   const { t } = useTranslation();
   const isPhoneWizard = appearance === "phoneWizard";
   const isWizard = appearance === "wizard" || isPhoneWizard;
-  const { subtotal, discount, amountPaid, balance, lineItemRows, catalogItems, containerLabel, pickupLabel, pickupFieldLabel, pickupAssignmentLabel, pickupAssignmentFieldLabel, pickupSourceLabel } =
+  const { subtotal, discount, amountPaid, balance, lineItemRows, catalogItems, containerLabel, pickupLabel, pickupFieldLabel, supervisorLabel, pickupRouteLabel } =
     usePreviewLabels(values);
 
   if (isWizard) {
@@ -802,8 +767,8 @@ export function InvoiceFormPreviewStep({
           <PreviewField label={pickupFieldLabel} value={pickupLabel} />
           <PreviewField label={t("invoices.form.fields.container")} value={containerLabel} />
           <PreviewField label={t("invoices.form.fields.paymentLocation")} value={getPaymentLocationLabel(values.paymentLocation)} />
-          <PreviewField label={t("invoices.form.fields.pickupSource")} value={pickupSourceLabel} />
-          <PreviewField label={pickupAssignmentFieldLabel} value={pickupAssignmentLabel} />
+          <PreviewField label={t("invoices.form.fields.pickupRoute")} value={pickupRouteLabel} />
+          <PreviewField label={t("invoices.form.fields.supervisorEmployee")} value={supervisorLabel} />
         </div>
       </FormSection>
 

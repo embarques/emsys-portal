@@ -7,7 +7,7 @@
   "submenus": {
     "pickups": "Recogidas",
     "orders": "Citas",
-    "reservedInvoices": "Asignar",
+    "reservedInvoices": "Asignar números de factura",
     "invoices": "Facturas",
     "routes": "Rutas",
     "routeManager": "Rutas",
@@ -60,7 +60,7 @@
     "employees": "Empleados",
     "userActivities": "Actividad de usuarios",
     "branches": "Sucursales",
-    "barcodeStatuses": "Administrar estados de códigos de barras",
+    "barcodeStatuses": "Estados de códigos de barras",
     "settings": "Configuración",
     "employeeDepartments": "Departamentos de empleados",
     "employeeTitles": "Cargos de empleados",
@@ -68,7 +68,7 @@
     "pendingInventoryTransactions": "Transacciones pendientes",
     "pendingFinancialActivity": "Conciliación pendiente",
     "pendingClearance": "Liquidación pendiente",
-    "reservedInvoices": "Asignar facturas",
+    "reservedInvoices": "Asignar números de factura",
     "changeRequests": "Solicitudes de cambio"
   },
   "badges": {
