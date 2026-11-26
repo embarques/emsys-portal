@@ -260,9 +260,9 @@ function toInvoiceDateValue(iso: string): string {
 }
 
 function readInvoiceCreatedBy(user: unknown): string {
-  if (!user || typeof user !== "object") return DEFAULT_CREATED_BY;
+  if (!user || typeof user !== "object") return "";
   const entry = user as ApiInvoiceUser;
-  return String(entry.fullName ?? entry.userName ?? entry.name ?? "").trim() || DEFAULT_CREATED_BY;
+  return entry.fullName?.trim() || entry.userName?.trim() || entry.name?.trim() || (entry.id ? String(entry.id) : "");
 }
 
 function normalizeApiInvoicePartyAddresses(party: ApiInvoiceParty): OrderParty["addresses"] {
@@ -667,15 +667,15 @@ function normalizeInvoice(raw: unknown): Invoice | null {
     hasAccountingEntries: item.hasAccountingEntries === true,
     branch: item.branch,
     pickupId: item.pickup?.id != null ? String(item.pickup.id) : undefined,
-    pickupSource: receivedBy.pickupSource,
+    pickupSource: dailyRouteFields.dailyRouteId ? "route" : receivedBy.pickupSource,
     officeBranchId,
     officeBranchName: officeBranchName || undefined,
     pickupEmployeeId: receivedBy.pickupEmployeeId,
     pickupEmployeeName: receivedBy.pickupEmployeeName,
     ...dailyRouteFields,
-    supervisor: Number.isInteger(supervisorId) && supervisorId > 0 ? { id: supervisorId, name: supervisorRaw?.name?.trim() || receivedBy.pickupEmployeeName || "" } : undefined,
-    routeId: receivedBy.routeId,
-    routeName: receivedBy.routeName,
+    supervisor: Number.isInteger(supervisorId) && supervisorId > 0 ? { id: supervisorId, name: supervisorRaw ? supervisorRaw.name?.trim() || String(supervisorId) : receivedBy.pickupEmployeeName || String(supervisorId) } : undefined,
+    routeId: dailyRouteFields.dailyRouteId || receivedBy.routeId,
+    routeName: dailyRouteFields.dailyRouteName || receivedBy.routeName,
     routeCrewId: receivedBy.routeCrewId,
     routeCrewName: receivedBy.routeCrewName,
     sender: normalizeApiInvoiceParty(item.sender),
@@ -1413,6 +1413,7 @@ type ApiInvoiceWritePayload = {
   paidRegion: string;
   paidStatus: string;
   employee?: InvoiceWriteEmployeeRef | null;
+  dailyRouteId?: string;
   supervisor?: InvoiceWriteEmployeeRef | null;
   receivedBy?: ApiInvoiceReceivedByWrite | null;
   container: InvoiceWriteContext["container"];
@@ -1529,6 +1530,7 @@ function applyInvoicePickupAssignment(
       ? { id: dailyRoute.id, name: dailyRoute.name.trim() || dailyRoute.id }
       : null;
 
+    payload.dailyRouteId = dailyRoute?.id;
     payload.receivedBy = dailyRouteRef;
     payload.supervisor = isUpdate ? null : undefined;
     payload.route = dailyRouteRef;

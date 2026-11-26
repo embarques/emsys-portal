@@ -6,13 +6,13 @@
     "sort": "Sort by",
     "asc": "Ascending",
     "desc": "Descending",
-    "receivedAt": "Received at",
+    "receivedAt": "Received on device at",
     "filterUser": "Filter by user",
     "allUsers": "All users",
     "search": "Search reserved numbers",
     "searchPlaceholder": "Type an invoice number…",
     "selectAll": "Select all selectable numbers on this page",
-    "title": "Assign invoices",
+    "title": "Assign invoice numbers",
     "description": "Generate invoice numbers for offline mobile use and assign them to users.",
     "loading": "Loading invoices to assign…",
     "denied": "You do not have permission to view invoice pools.",
@@ -48,7 +48,7 @@
     "next": "Next",
     "generationNotice": "Generated numbers were added to the unassigned company pool. Select them below, then choose a user to assign them.",
     "unassigned": "Unassigned",
-    "user": "User",
+    "user": "Number assignee",
     "searchUser": "Search active users",
     "selectedUser": "Selected user",
     "noUsers": "No active users match your search.",
@@ -139,8 +139,8 @@
     "discount": "Discount",
     "amountPaid": "Paid",
     "balance": "Balance",
-    "pickupAssignment": "Received by",
-    "createdBy": "Created by",
+    "pickupAssignment": "Pickup supervisor",
+    "createdBy": "Digitized by",
     "createdAt": "Created at"
   },
   "search": {
@@ -221,7 +221,7 @@
       "pending": "Pending",
       "paymentLocation": "Where will this invoice be paid?",
       "createdAt": "Created at",
-      "createdBy": "Created by",
+      "createdBy": "Digitized by",
       "sender": "Sender",
       "receiver": "Receiver",
       "pickupReference": "Pickup Reference",
@@ -232,10 +232,10 @@
       "pickupSourceRoute": "Daily route",
       "pickupSourceWarehouse": "Warehouse",
       "pickupSourceOffice": "Office",
-      "pickupRoute": "Daily route",
+      "pickupRoute": "Daily pickup route",
       "warehouseEmployee": "Warehouse employee",
       "officeEmployee": "Office employee",
-      "supervisorEmployee": "Supervisor"
+      "supervisorEmployee": "Pickup supervisor"
     },
     "placeholders": {
       "invoiceNumber": "INV-2026-0001",
@@ -569,7 +569,7 @@
   },
   "view": {
     "system": "System",
-    "pickupAssignment": "Received by",
+    "pickupAssignment": "Pickup supervisor",
     "fields": {
       "documentId": "Doc",
       "phones": "Phones",
@@ -806,7 +806,7 @@
       },
       "createdBy": {
         "name": {
-          "label": "Created by"
+          "label": "Digitized by"
         }
       },
       "route": {
@@ -858,9 +858,11 @@
         "label": "Registration",
         "placeholder": "Enter registration…"
       },
+      "supervisor": { "name": { "label": "Pickup supervisor" } },
+      "dailyRoute": { "name": { "label": "Daily pickup route" } },
       "receivedBy": {
         "name": {
-          "label": "Received by",
+          "label": "Legacy pickup reference",
           "placeholder": "Enter name…"
         }
       },

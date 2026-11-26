@@ -7,7 +7,7 @@
   "submenus": {
     "pickups": "Recogidas",
     "orders": "Citas",
-    "reservedInvoices": "Asignar",
+    "reservedInvoices": "Asignar números de factura",
     "invoices": "Facturas",
     "routes": "Rutas",
     "routeManager": "Rutas",
@@ -68,7 +68,7 @@
     "pendingInventoryTransactions": "Transacciones pendientes",
     "pendingFinancialActivity": "Conciliación pendiente",
     "pendingClearance": "Liquidación pendiente",
-    "reservedInvoices": "Asignar facturas",
+    "reservedInvoices": "Asignar números de factura",
     "changeRequests": "Solicitudes de cambio"
   },
   "badges": {

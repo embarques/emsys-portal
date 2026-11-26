@@ -34,7 +34,6 @@ import {
   SearchableSelect,
   type SearchableSelectOption,
 } from "@/components/ui/searchable-select";
-import { SegmentedControl } from "@/components/ui/segmented-control";
 import { CustomerContactSummary } from "@/components/orders/customer-contact-summary";
 import { UnverifiedAddressNotice } from "@/components/addresses/unverified-address-notice";
 import { InvoiceLineItemsEditor } from "@/components/invoices/invoice-line-items-editor";
@@ -79,18 +78,12 @@ import {
 } from "@/lib/employees/types";
 import {
   mapPaymentLocationToPaidRegion,
-  INVOICE_RECEIVED_VIA_CHOICES,
   computeInvoiceBalance,
   createEmptyInvoiceForm,
-  invoicePickupSourceToReceivedVia,
-  isInvoiceEmployeePickupSource,
-  receivedViaToInvoicePickupSource,
   resetInvoiceFormForNextEntry,
   resolveLineTotal,
   type InvoiceFormSubmitResult,
   type InvoiceFormValues,
-  type InvoicePickupSource,
-  type InvoiceReceivedViaChoice,
 } from "@/lib/invoices/types";
 import { useItemPicker } from "@/lib/items/hooks/use-items";
 import {
@@ -299,7 +292,6 @@ export function InvoiceForm({
   const [entityError, setEntityError] = useState<string | null>(null);
   const [pickupQuery, setPickupQuery] = useState("");
   const [pickupEmployeeQuery, setPickupEmployeeQuery] = useState("");
-  const [pickupAssignmentOpenKey, setPickupAssignmentOpenKey] = useState(0);
   const navigateOnEnter = useFormEnterNavigation({
     advanceTextareas: Boolean(onContinue),
     submitOnLast: !onContinue,
@@ -323,8 +315,6 @@ export function InvoiceForm({
   }, [draftValues, isEditing, responsibilityLocked, responsibility.ready, responsibility.canAssign, pickupRoutes]);
   const { data: branchesData, isLoading: branchesLoading } = useBranchPicker();
   const branches = useMemo(() => branchesData?.items ?? [], [branchesData?.items]);
-  const isEmployeePickupSource = isInvoiceEmployeePickupSource(values.pickupSource);
-  const receivedVia = invoicePickupSourceToReceivedVia(values.pickupSource);
   const employeesQuery = useEmployees({
     ...DEFAULT_EMPLOYEE_LIST_PARAMS,
     limit: 200,
@@ -335,7 +325,7 @@ export function InvoiceForm({
     debouncedPickupEmployeeQuery
       ? { field: "name", operator: "contains", value: debouncedPickupEmployeeQuery }
       : undefined,
-    { enabled: isEmployeePickupSource && responsibility.canAssign },
+    { enabled: !values.routeId && responsibility.canAssign },
   );
   const pickupRouteOptions = useMemo(
     () => buildActiveRouteAssignmentOptions(pickupRoutes, t),
@@ -479,41 +469,14 @@ export function InvoiceForm({
     setFormError(null);
   }
 
-  function updatePickupSource(next: InvoicePickupSource) {
-    if (next !== values.pickupSource) {
-      commitValues((current) => ({
-        ...current,
-        pickupSource: next,
-        routeId: next === "route" ? current.routeId : "",
-        routeCrewId: next === "route" ? current.routeCrewId : "",
-        routeCrewName: next === "route" ? current.routeCrewName : "",
-        officeBranchId: "",
-        officeBranchName: "",
-        pickupEmployeeId: "",
-        pickupEmployeeName: "",
-      }));
-      setPickupEmployeeQuery("");
-    }
-    setFormError(null);
-    if (isWizard) {
-      setPickupAssignmentOpenKey((key) => key + 1);
-    }
-  }
-
-  function updateReceivedVia(next: InvoiceReceivedViaChoice) {
-    if (invoicePickupSourceToReceivedVia(values.pickupSource) === next) {
-      setFormError(null);
-      if (isWizard && next !== "creator") {
-        setPickupAssignmentOpenKey((key) => key + 1);
-      }
-      return;
-    }
-    updatePickupSource(receivedViaToInvoicePickupSource(next));
-  }
-
   function updatePickupRoute(routeId: string) {
+    const supervisor = resolveDailyRouteSupervisor(pickupRoutes.find((route) => route.id === routeId));
     commitValues((current) => ({
       ...current,
+      ...invoiceSelfResponsibility(),
+      pickupSource: routeId ? "route" : isEditing && responsibility.canAssign ? "office" : "creator",
+      pickupEmployeeId: supervisor ? String(supervisor.id) : "",
+      pickupEmployeeName: supervisor?.name ?? "",
       routeId,
       routeCrewId: "",
       routeCrewName: "",
@@ -525,7 +488,8 @@ export function InvoiceForm({
     const employee = pickupSourceEmployees.find((entry) => String(entry.id) === employeeId);
     commitValues((current) => ({
       ...current,
-      pickupEmployeeId: employeeId,
+      pickupSource: employeeId === "self" ? "creator" : "office",
+      pickupEmployeeId: employeeId === "self" ? "" : employeeId,
       pickupEmployeeName: employee?.name ?? "",
       officeBranchId: employee ? String(employee.branch.id) : "",
       officeBranchName: employee
@@ -570,7 +534,7 @@ export function InvoiceForm({
   function applyCreatedEmployee(employee: Employee) {
     commitValues((current) => ({
       ...current,
-      pickupSource: current.pickupSource === "route" ? "office" : current.pickupSource,
+      pickupSource: "office",
       pickupEmployeeId: String(employee.id),
       pickupEmployeeName: employee.name,
       officeBranchId: String(employee.branch.id),
@@ -630,9 +594,9 @@ export function InvoiceForm({
       pickupSource: "route",
       routeId: route.id,
       routeCrewId: "",
-      routeCrewName: "",
-      pickupEmployeeId: "",
-      pickupEmployeeName: "",
+      routeCrewName: route.name,
+      pickupEmployeeId: String(resolveDailyRouteSupervisor(route)?.id ?? ""),
+      pickupEmployeeName: resolveDailyRouteSupervisor(route)?.name ?? "",
       officeBranchId: "",
       officeBranchName: "",
     }));
@@ -816,18 +780,6 @@ export function InvoiceForm({
 
   const pickupEmployeeFieldLabel = t("invoices.form.fields.supervisorEmployee");
   const pickupEmployeePlaceholder = t("invoices.form.placeholders.selectSupervisor");
-  const openPickupAssignment = isWizard && pickupAssignmentOpenKey > 0;
-  const receivedViaOptions = INVOICE_RECEIVED_VIA_CHOICES.filter(
-    (option) =>
-      (!isEditing || option.value !== "creator") &&
-      (responsibility.canAssign ||
-        option.value === "creator" ||
-        (option.value === "route" && pickupRoutes.length > 0)),
-  ).map((option) => ({
-    value: option.value,
-    label: t(option.labelKey),
-  }));
-
   function renderField(
     label: string,
     htmlFor: string | undefined,
@@ -932,94 +884,60 @@ export function InvoiceForm({
     )
   );
 
-  const responsibilityFields = responsibilityReadOnly ? (
-    <ReadOnlyField label={t("invoices.form.fields.pickupSource")}>
-      {values.pickupEmployeeName || values.routeCrewName || t("invoices.form.fields.pickupSourceCreator")}
-    </ReadOnlyField>
-  ) : (
+  const selectedRoute = pickupRoutes.find((route) => route.id === values.routeId);
+  const supervisorLabel = values.pickupEmployeeName || resolveDailyRouteSupervisor(selectedRoute)?.name ||
+    (values.pickupSource === "creator" ? responsibility.ownEmployee?.name || t("invoices.form.fields.pickupSourceCreator") : t("common.empty.dash"));
+  const responsibilityFields = (
     <>
-      {renderField(
-        t("invoices.form.fields.pickupSource"),
-        "pickupSource",
-        false,
-        <SegmentedControl
-          id="pickupSource"
-          aria-label={t("invoices.form.fields.pickupSource")}
-          value={receivedVia}
-          onValueChange={(next) => updateReceivedVia(next as InvoiceReceivedViaChoice)}
-          options={receivedViaOptions}
+      {responsibilityReadOnly ? (
+        <ReadOnlyField label={t("invoices.form.fields.pickupRoute")}>
+          {selectedRoute?.name || values.routeCrewName || values.routeId || t("common.empty.dash")}
+        </ReadOnlyField>
+      ) : renderField(
+        t("invoices.form.fields.pickupRoute"), "routeId", false,
+        <SearchableSelect
+          id="routeId"
+          value={values.routeId}
+          onValueChange={updatePickupRoute}
+          placeholder={t("invoices.form.placeholders.noPickupRoute")}
+          searchPlaceholder={t("invoices.form.placeholders.searchPickupRoutes")}
+          loading={pickupRoutesQuery.isFetching}
+          clearable
+          openOnNavigationFocus
+          {...(isWizard ? wizardSelectFieldProps(values.routeId) : {})}
+          options={[
+            { value: "", label: t("invoices.form.placeholders.noPickupRoute") },
+            ...(values.routeId && !selectedRoute ? [{ value: values.routeId, label: values.routeCrewName || values.routeId }] : []),
+            ...pickupRouteOptions,
+          ]}
         />,
+        undefined,
+        <FieldEntityActions onAdd={openAddRoute} addIcon={Route} />,
       )}
-      {receivedVia === "creator" ? (
-        <p className="text-sm text-muted-foreground">{t("invoices.form.hints.selfResponsibility")}</p>
-      ) : null}
-      {receivedVia === "route"
-        ? renderField(
-            t("invoices.form.fields.pickupRoute"),
-            "routeId",
-            true,
-            <SearchableSelect
-              key={isWizard ? `routeId-${pickupAssignmentOpenKey}` : "routeId"}
-              id="routeId"
-              value={values.routeId}
-              onValueChange={updatePickupRoute}
-              placeholder={t("invoices.form.placeholders.selectPickupRoute")}
-              searchPlaceholder={t("invoices.form.placeholders.searchPickupRoutes")}
-              loading={pickupRoutesQuery.isFetching}
-              required
-              autoFocus={openPickupAssignment}
-              defaultOpen={openPickupAssignment}
-              openOnNavigationFocus
-              {...(isWizard ? wizardSelectFieldProps(values.routeId) : {})}
-              options={[
-                { value: "", label: t("invoices.form.placeholders.selectPickupRoute") },
-                ...pickupRouteOptions.map((option) => ({
-                  value: option.value,
-                  label: option.label,
-                })),
-              ]}
-            />,
-            undefined,
-            <FieldEntityActions onAdd={openAddRoute} addIcon={Route} />,
-          )
-        : null}
-      {receivedVia === "supervisor"
-        ? renderField(
-            pickupEmployeeFieldLabel,
-            "pickupEmployeeId",
-            true,
-            <SearchableSelect
-              key={isWizard ? `pickupEmployeeId-${pickupAssignmentOpenKey}` : "pickupEmployeeId"}
-              id="pickupEmployeeId"
-              value={values.pickupEmployeeId}
-              onValueChange={updatePickupEmployee}
-              placeholder={pickupEmployeePlaceholder}
-              searchPlaceholder={t("invoices.form.placeholders.searchEmployees")}
-              manualFiltering
-              loading={pickupEmployeeSearch.isFetching || employeesQuery.isFetching}
-              onSearchChange={setPickupEmployeeQuery}
-              required
-              autoFocus={openPickupAssignment}
-              defaultOpen={openPickupAssignment}
-              {...(isWizard ? wizardSelectFieldProps(values.pickupEmployeeId) : {})}
-              options={[
-                ...(debouncedPickupEmployeeQuery
-                  ? []
-                  : [{ value: "", label: pickupEmployeePlaceholder }]),
-                ...pickupEmployeeOptions,
-              ]}
-            />,
-            undefined,
-            <FieldEntityActions onAdd={openAddEmployee} addIcon={UserPlus} />,
-          )
-        : null}
-      {receivedVia === "route" && values.routeId ? (
-        <p className="text-sm text-muted-foreground">
-          {t("invoices.form.fields.supervisor")}:{" "}
-          {resolveDailyRouteSupervisor(pickupRoutes.find((route) => route.id === values.routeId))?.name ||
-            "—"}
-        </p>
-      ) : null}
+      {values.routeId || responsibilityReadOnly || !responsibility.canAssign ? (
+        <ReadOnlyField label={pickupEmployeeFieldLabel}>{supervisorLabel}</ReadOnlyField>
+      ) : renderField(
+        pickupEmployeeFieldLabel, "pickupEmployeeId", true,
+        <SearchableSelect
+          id="pickupEmployeeId"
+          value={values.pickupSource === "creator" ? "self" : values.pickupEmployeeId}
+          onValueChange={updatePickupEmployee}
+          placeholder={pickupEmployeePlaceholder}
+          searchPlaceholder={t("invoices.form.placeholders.searchEmployees")}
+          manualFiltering
+          loading={pickupEmployeeSearch.isFetching || employeesQuery.isFetching}
+          onSearchChange={setPickupEmployeeQuery}
+          required
+          openOnNavigationFocus
+          {...(isWizard ? wizardSelectFieldProps(values.pickupEmployeeId) : {})}
+          options={[
+            ...(!isEditing && !pickupEmployeeQuery.trim() ? [{ value: "self", label: t("invoices.form.fields.pickupSourceCreator") }] : []),
+            ...pickupEmployeeOptions,
+          ]}
+        />,
+        undefined,
+        <FieldEntityActions onAdd={openAddEmployee} addIcon={UserPlus} />,
+      )}
     </>
   );
 

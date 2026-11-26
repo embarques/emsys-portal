@@ -93,15 +93,7 @@ Our workers digitize the information from our physical invoices into the system 
 
 An invoice represents the merchandise collected as part of a client's shipment.
 
-**Received by** (`receivedBy`) is who took in the merchandise in **NY** (pickup / receive). It replaces legacy `employee` (`core.User`). The value is either a **non-DR (NY) daily route** or a **single employee from a non-DR branch**, set when creating or editing the invoice. The invoice table shows Received by, not a separate Route field. **Received via** (Me / Supervisor / Daily route) is portal-only so the form can pick which of those to save as `receivedBy`; do not persist the via discriminator. The digitizer is always `createdBy` (the user creating the invoice). Without `canAssignInvoiceResponsibility`, the form defaults to Me (own supervised daily routes may still be selectable when policy allows).
-
-Do not confuse these three route concepts:
-
-| Concept | Where | Branch / meaning | Financial accountability? |
-| --- | --- | --- | --- |
-| **`receivedBy`** | Invoice | NY — who received the merchandise (employee **or** NY daily route) | No by itself. Each payment journal’s chosen collector is accountable for that payment, including INITIAL-PAYMENT. |
-| **`invoice.dailyRoute`** | Invoice snapshot | NY — recordkeeping / insights copy when receive was via a daily route (often derived from `receivedBy` when it is a route) | **No** for later payments, surcharges, or discounts. Insights / history only. |
-| **Barcode `route`** | Each label / invoice item | **RD** — delivery daily vehicle-route | No. Operational delivery assignment only. |
+**Pickup supervisor** (`supervisor`) identifies the employee who took custody of the merchandise and prepared the original invoice. Office and warehouse pickups use a direct employee selection. **Daily pickup route** (`dailyRoute`) is optional. Selecting a route saves its supervisor on the invoice. **Digitized by** (`createdBy`) identifies the portal user who entered the invoice. Barcode delivery routes in RD and payment collectors have separate lifecycles.
 
 **Confirmed responsibility policy (2026-11-19):** invoice merchandise responsibility
 and every payment's collector are independent, including INITIAL-PAYMENT. Invoice
@@ -134,15 +126,7 @@ Responsibility changes do not post revenue or change invoice balances.
 
 Later Daily Income journals (payment / surcharge / discount) choose their own assignee (employee, daily-route supervisor, or “me”) case by case. They must **not** inherit `invoice.dailyRoute` for reconciliation ownership. If a later journal selects a daily route, that journal’s supervisor is accountable for **that transaction only**.
 
-TODO (backend) — invoice `receivedBy` (portal now follows this; align API + legacy data):
-
-Replace invoice **`employee`** (`core.User`) with **`receivedBy`**.
-
-**Route:** `receivedBy` is the selected NY daily vehicle-route (`id` + `name`) with nested crew ref `route` (`id` + `name`), or a single employee (like the current/legacy system).
-
-Keep **`createdBy`** as the user who digitized the invoice. **`createdAt`** is the date/time the invoice was digitized. **`updatedAt` / `updatedBy`** are the last user who updated it.
-
-**Backfill legacy invoices:** if `employee` is a `core.User` and there is no daily route, copy it onto `receivedBy`. After backfill, stop treating `employee` as Received by. The portal already reads `receivedBy` first and falls back to legacy `employee` / `route` until this ships.
+Legacy `driver` identifies the pickup supervisor. Older clients can still supply `receivedBy` and `employee`. Historical invoices can lack pickup details. A reserved number has an assigned user (`allocation.userId`) and a device receipt timestamp (`receivedAt`). Both belong to the number handoff.
 
 ### Reserved invoice numbers
 

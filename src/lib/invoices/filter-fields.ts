@@ -163,7 +163,7 @@ export const INVOICE_TABLE_FILTER_FIELDS: TableFilterFieldDefinition[] = [
   },
   {
     field: "createdBy.name",
-    label: "Created by",
+    label: "Digitized by",
     operators: ["eq", "neq", "contains", "startsWith"],
     valueType: "select",
     optionsSource: "users",
@@ -197,8 +197,22 @@ export const INVOICE_TABLE_FILTER_FIELDS: TableFilterFieldDefinition[] = [
     placeholder: "Enter registration…",
   },
   {
+    field: "supervisor.name",
+    label: "Pickup supervisor",
+    operators: [...TEXT_OPERATORS],
+    valueType: "text",
+    placeholder: "Enter name…",
+  },
+  {
+    field: "dailyRoute.name",
+    label: "Daily pickup route",
+    operators: [...TEXT_OPERATORS],
+    valueType: "text",
+    placeholder: "Enter route name…",
+  },
+  {
     field: "receivedBy.name",
-    label: "Received by",
+    label: "Legacy pickup reference",
     operators: [...TEXT_OPERATORS],
     valueType: "text",
     placeholder: "Enter name…",

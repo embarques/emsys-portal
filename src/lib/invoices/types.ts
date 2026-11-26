@@ -26,12 +26,6 @@ export type InvoicePaymentLocation = string;
 /** Where the pickup was handled: on a route, or by an employee at a warehouse or office. */
 export type InvoicePickupSource = "creator" | "route" | "warehouse" | "office";
 
-/**
- * Portal-only Received via choice. Maps onto `pickupSource`:
- * Me → creator, Supervisor → office/warehouse employee, Daily route → route.
- */
-export type InvoiceReceivedViaChoice = "creator" | "supervisor" | "route";
-
 export const INVOICE_PICKUP_SOURCES = [
   { value: "creator" as const, labelKey: "invoices.form.fields.pickupSourceCreator" },
   { value: "route" as const, labelKey: "invoices.form.fields.pickupSourceRoute" },
@@ -39,32 +33,9 @@ export const INVOICE_PICKUP_SOURCES = [
   { value: "office" as const, labelKey: "invoices.form.fields.pickupSourceOffice" },
 ] as const;
 
-export const INVOICE_RECEIVED_VIA_CHOICES = [
-  { value: "creator" as const, labelKey: "invoices.form.fields.pickupSourceCreator" },
-  { value: "supervisor" as const, labelKey: "invoices.form.fields.pickupSourceSupervisor" },
-  { value: "route" as const, labelKey: "invoices.form.fields.pickupSourceRoute" },
-] as const;
-
 /** Warehouse and office pickups are attributed to an employee instead of a route. */
 export function isInvoiceEmployeePickupSource(source: InvoicePickupSource): boolean {
   return source === "warehouse" || source === "office";
-}
-
-export function invoicePickupSourceToReceivedVia(
-  source: InvoicePickupSource,
-): InvoiceReceivedViaChoice {
-  if (source === "route") return "route";
-  if (source === "creator") return "creator";
-  return "supervisor";
-}
-
-/** New supervisor picks persist as office; warehouse remains only for existing records until changed. */
-export function receivedViaToInvoicePickupSource(
-  choice: InvoiceReceivedViaChoice,
-): InvoicePickupSource {
-  if (choice === "route") return "route";
-  if (choice === "creator") return "creator";
-  return "office";
 }
 
 /** @deprecated Use InvoicePickupSource */
@@ -947,11 +918,11 @@ export function invoiceToFormValues(invoice: Invoice): InvoiceFormValues {
     pickupSource: normalizeInvoicePickupSource(invoice.pickupSource, invoice.officeBranchId),
     routeId: invoice.routeId ?? "",
     routeCrewId: invoice.routeCrewId ?? "",
-    routeCrewName: invoice.routeCrewName ?? "",
+    routeCrewName: invoice.dailyRouteName || invoice.routeName || invoice.routeCrewName || "",
     officeBranchId: invoice.officeBranchId ?? "",
     officeBranchName: invoice.officeBranchName ?? "",
-    pickupEmployeeId: invoice.pickupEmployeeId ?? "",
-    pickupEmployeeName: invoice.pickupEmployeeName ?? "",
+    pickupEmployeeId: String(invoice.supervisor?.id ?? invoice.pickupEmployeeId ?? ""),
+    pickupEmployeeName: invoice.supervisor?.name || invoice.pickupEmployeeName || "",
     senderId: invoice.sender.clientId ?? sender?.id ?? "",
     sender,
     receiverId: invoice.receiver?.clientId ?? receiver?.id ?? "",

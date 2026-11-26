@@ -80,7 +80,6 @@ import {
   getInvoiceSubtotal,
   getInvoiceTotalMoneyClass,
   getPaymentLocationLabel,
-  formatInvoicePickupAssignmentLabel,
   resolveInvoicePaidStatus,
 } from "@/lib/invoices/display";
 import { buildInvoiceCommentActivity } from "@/lib/invoices/activity";
@@ -958,7 +957,13 @@ export function InvoicesWorkspace() {
       label: t("invoices.columns.pickupAssignment"),
       defaultVisible: false,
       renderCell: (invoice) =>
-        formatInvoicePickupAssignmentLabel(invoice, t, t("common.empty.dash")),
+        invoice.supervisor?.name || invoice.pickupEmployeeName || t("common.empty.dash"),
+    },
+    {
+      id: "dailyRoute",
+      label: t("invoices.form.fields.pickupRoute"),
+      defaultVisible: false,
+      renderCell: (invoice) => invoice.dailyRouteName || (invoice.pickupSource === "route" && invoice.routeName) || t("common.empty.dash"),
     },
     {
       id: "createdBy",

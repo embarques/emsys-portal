@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { TransactionAssigneeSelect } from "./transaction-assignee-select";
 import { useResponsibilityAccess } from "@/lib/accounting/daily-income/use-responsibility-access";
+import { resolveDailyRouteSupervisor } from "@/lib/accounting/daily-income/assignee";
 import { canSelectResponsibleRoute } from "@/lib/accounting/daily-income/responsibility";
 import type { DailyIncomeJournalValues } from "@/lib/accounting/daily-income/types";
 import type { Employee } from "@/lib/employees/types";
@@ -17,6 +18,7 @@ export function InvoiceResponsibilitySelect({ value, onChange, employees, dailyR
   const [source, setSource] = useState<"creator" | "employee" | "route">(value.dailyRouteId ? "route" : value.employee ? "employee" : "creator");
   const sourceRef = useRef(source);
   const route = dailyRoutes.find((entry) => entry.id === value.dailyRouteId);
+  const supervisor = resolveDailyRouteSupervisor(route);
   useEffect(() => {
     if (!access.ready || access.canAssign || !value.employee && !value.dailyRouteId) return;
     if (route && canSelectResponsibleRoute(route, false, access.ownEmployee?.id)) return;
@@ -29,6 +31,7 @@ export function InvoiceResponsibilitySelect({ value, onChange, employees, dailyR
     assigneeSource={value.dailyRouteId ? "route" : value.employee ? "employee" : source}
     employeeId={value.employee?.id} employeeName={value.employee?.name}
     routeId={value.dailyRouteId} routeName={route?.name}
+    supervisorId={supervisor?.id} supervisorName={supervisor?.name}
     setValue={(name, next) => {
       if (name === "assigneeSource" && (next === "creator" || next === "employee" || next === "route")) {
         setSource(next);

@@ -52,7 +52,6 @@ import { formatAuditDateTime } from "@/lib/audit/display";
 import { formatOrderDateWithWeekday } from "@/lib/orders/display";
 import {
   formatInvoiceMoney,
-  formatInvoicePickupAssignmentLabel,
   getContainerLabelForInvoice,
   getInvoiceClearanceBadgeClass,
   getInvoiceClearanceLabel,
@@ -62,11 +61,9 @@ import {
   getInvoicePartyCoreAddress,
   getInvoiceSubtotal,
   getPaymentLocationLabel,
-  invoicePickupSourceLabelKey,
   resolveInvoicePaidStatus,
 } from "@/lib/invoices/display";
 import {
-  isInvoiceEmployeePickupSource,
   resolveInvoicePaymentSummary,
   type Invoice,
   type InvoicePaymentSummary,
@@ -266,34 +263,6 @@ function InvoiceClearanceBreakdown({
   );
 }
 
-function getPickupAssignmentFieldLabel(
-  invoice: Invoice,
-  t: (key: string) => string,
-): string {
-  if (invoice.pickupSource === "warehouse")
-    return t("invoices.form.fields.warehouseEmployee");
-  if (invoice.pickupSource === "office")
-    return t("invoices.form.fields.officeEmployee");
-  return t("invoices.form.fields.pickupRoute");
-}
-
-function formatPickupAssignmentDisplay(
-  invoice: Invoice,
-  t: (key: string) => string,
-): string {
-  const empty = t("common.empty.dash");
-  const assignment = formatInvoicePickupAssignmentLabel(invoice, t, "");
-  if (!assignment) return empty;
-  if (
-    invoice.pickupSource &&
-    isInvoiceEmployeePickupSource(invoice.pickupSource) &&
-    invoice.officeBranchName?.trim()
-  ) {
-    return `${assignment} · ${invoice.officeBranchName.trim()}`;
-  }
-  return assignment;
-}
-
 export function InvoiceViewSheet({
   invoice,
   initialTab = "overview",
@@ -331,7 +300,6 @@ export function InvoiceViewSheet({
 
   const paidStatus = resolveInvoicePaidStatus(invoice);
   const empty = t("common.empty.dash");
-  const pickupSourceKey = invoicePickupSourceLabelKey(invoice.pickupSource);
   const containerLabel = getContainerLabelForInvoice(invoice);
   const pickupReference = invoice.pickupId?.trim()
     ? `#${invoice.pickupId.trim()}`
@@ -458,12 +426,12 @@ export function InvoiceViewSheet({
                 value={pickupReference}
               />
               <RecordViewSheetDetailRow
-                label={t("invoices.form.fields.pickupSource")}
-                value={pickupSourceKey ? t(pickupSourceKey) : empty}
+                label={t("invoices.form.fields.pickupRoute")}
+                value={invoice.dailyRouteName || (invoice.pickupSource === "route" && invoice.routeName) || empty}
               />
               <RecordViewSheetDetailRow
-                label={getPickupAssignmentFieldLabel(invoice, t)}
-                value={formatPickupAssignmentDisplay(invoice, t)}
+                label={t("invoices.form.fields.supervisorEmployee")}
+                value={invoice.supervisor?.name || invoice.pickupEmployeeName || empty}
               />
             </RecordViewSheetSection>
 

@@ -22,6 +22,7 @@ before(async () => {
       "@/lib/company/hooks/use-current-company$": appointmentHooks,
       "@/lib/layout/hooks/use-workspace-tabs$": appointmentHooks,
       "@/lib/customers/hooks/use-apply-customer-on-tab-return$": appointmentHooks,
+      "@/lib/accounting/daily-income/use-responsibility-access$": hooks,
       "@/lib/orders/hooks/use-orders$": hooks,
       "@/lib/employees/hooks/use-employees$": hooks,
       "@/lib/containers/hooks/use-containers$": hooks,
@@ -63,7 +64,7 @@ async function fixture({ manualNumber = true, step = 1 } = {}) {
   if (!manualNumber) await page.evaluate(() => { window.readOnly = true; });
   await page.addStyleTag({ content: ".hidden {display:none}" });
   await page.addScriptTag({ content: script });
-  await page.locator(step === 3 ? '[id$="-description"]' : step === 2 ? "#pickupId" : "#pickupSource").first().waitFor();
+  await page.locator(step === 3 ? '[id$="-description"]' : step === 2 ? "#pickupId" : "#routeId").first().waitFor();
   return page;
 }
 
@@ -123,23 +124,16 @@ test("the receiver picker offers pickup receivers, a search of all receivers and
 
 const focusedId = (page, id) => page.waitForFunction((id) => document.activeElement?.id === id, id);
 
-test("appointment route and supervisor employee advance to Next on Enter", async () => {
-  for (const [source, assignment] of [["route", "routeId"], ["supervisor", "pickupEmployeeId"]]) {
-    const page = await fixture();
-    try {
-      await page.locator(`#pickupSource-${source}`).click();
-      await focusedId(page, assignment);
-
-      await page.keyboard.press("ArrowDown");
-      await page.keyboard.press("Enter");
-      await focusedId(page, "wizard-next");
-
-      await page.locator(`#${assignment}`).focus();
-      await page.keyboard.press("Escape");
-      await page.keyboard.press("Enter");
-      await focusedId(page, "wizard-next");
-    } finally { await page.close(); }
-  }
+test("selecting a daily route supplies its pickup supervisor", async () => {
+  const page = await fixture();
+  try {
+    await page.locator("#routeId").click();
+    await page.getByRole("option", { name: /North route/ }).click();
+    await page.locator("#pickupEmployeeId").waitFor({ state: "detached" });
+    assert.match(await page.locator("body").innerText(), /Ana Warehouse/);
+    await page.locator("#routeId").locator("..").getByRole("button", { name: /clearSelection/ }).click();
+    await page.locator("#pickupEmployeeId").waitFor();
+  } finally { await page.close(); }
 });
 
 test("without manual number permission the locked invoice number mode still receives focus", async () => {
@@ -179,7 +173,7 @@ test("choosing Enter your own invoice number shows the number input below the se
 test("appointment routes open newest route date first even when an older route was created later", async () => {
   const page = await fixture();
   try {
-    await page.locator("#pickupSource-route").click();
+    await page.locator("#routeId").click();
     await focusedId(page, "routeId");
     await page.getByRole("option", { name: /North route/ }).waitFor();
     const labels = (await page.getByRole("option").allTextContents()).filter((label) => /route/i.test(label));
@@ -258,7 +252,7 @@ test("clicking an added line item opens it for editing in a highlighted panel", 
 test("typing an employee name and pressing Enter selects it and focuses Next", async () => {
   const page = await fixture();
   try {
-    await page.locator("#pickupSource-supervisor").click();
+    await page.locator("#pickupEmployeeId").click();
     await focusedId(page, "pickupEmployeeId");
     await page.keyboard.type("Ana");
     await page.keyboard.press("Enter");

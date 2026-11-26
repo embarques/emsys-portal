@@ -4,7 +4,7 @@ import type { ApiTableField } from "@/lib/table/api-table-fields";
 export const INVOICE_API_TABLE_FIELDS = [
   // Concurrency/analytics references are not additional Received by or responsibility columns.
   { field: "version", column: false },
-  { field: "dailyRoute", column: false },
+  { field: "dailyRoute", defaultVisible: false },
   { field: "dailyRouteId", column: false },
   { field: "balance" },
   { field: "branch", defaultVisible: false },
@@ -35,6 +35,7 @@ export const INVOICE_API_TABLE_FIELDS = [
   { field: "reservedAt", format: "date", defaultVisible: false },
   { field: "route", columnId: "pickupAssignment", defaultVisible: false },
   { field: "sender", columnId: "sender.name" },
+  { field: "supervisor", columnId: "pickupAssignment", defaultVisible: false },
   { field: "surcharge", defaultVisible: false },
   { field: "updatedAt", format: "date", defaultVisible: false },
   { field: "updatedBy", defaultVisible: false },
