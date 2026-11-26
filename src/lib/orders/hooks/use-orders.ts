@@ -60,7 +60,17 @@ export function useOrders(params: OrderListParams, options: { enabled?: boolean;
 
   return useWorkspaceQuery({
     queryKey: [...queryKeys.orders.list(params), companyId, user?.uid || email || "", hasPermission("canViewPickup", "pickup") ? "all" : "assigned", options.routeMode ?? false],
-    queryFn: () => fetchOrders(options.routeMode ? { ...params, assignedRouteOnly: true, routeEmployee: params.routeEmployee || "me" } : params),
+    queryFn: () =>
+      fetchOrders(
+        options.routeMode
+          ? {
+              ...params,
+              assignedRouteOnly: true,
+              // null = omit (daily-route broad scope); undefined/"" fall back to my work.
+              routeEmployee: params.routeEmployee === null ? null : params.routeEmployee || "me",
+            }
+          : params,
+      ),
     enabled: queryEnabled && (options.enabled ?? true),
   });
 }

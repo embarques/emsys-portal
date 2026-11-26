@@ -57,6 +57,7 @@ type TableSelectionActionsMenuProps = {
  * Overflow "Actions" menu for selection-header / view-sheet secondary commands.
  * Keep Add / Edit / Delete / Print as standalone toolbar buttons; put
  * everything else (map, complete, documents, bulk status, …) in here.
+ * When Print and this menu share a row, render Print before the Actions menu.
  *
  * When only one action registers, it is flattened to a standalone outline
  * button instead of an "Actions" dropdown.

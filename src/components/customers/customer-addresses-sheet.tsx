@@ -14,6 +14,7 @@ import {
   RecordViewSheetHeader,
   RecordViewSheetSection,
 } from "@/components/app-shell/record-view-sheet";
+import { TableMoreCountButton } from "@/components/app-shell/table-more-count-button";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -25,7 +26,6 @@ import { useCustomer } from "@/lib/customers/hooks/use-customers";
 import type { Customer } from "@/lib/customers/types";
 import {
   getAddressLabelKey,
-  ADDRESS_TEXT_WRAP_CLASSNAME,
   getPrimaryAddress,
   orderAddressesForDisplay,
   resolveCustomerAddressCount,
@@ -179,31 +179,32 @@ export function CustomerTableAddressCell({ customer, className }: CustomerTableA
 
   return (
     <>
-      <div className={cn("w-full", ADDRESS_TEXT_WRAP_CLASSNAME, className)}>
-        <TableStreetAddress
-          address={primary}
-          action={
-            primary ? (
-              <CustomerUnverifiedAddressAction
-                customer={resolvedCustomer}
-                address={primary}
-                label={t(getAddressLabelKey(primary, 0))}
-              />
-            ) : null
-          }
-        />
+      <div className={cn("min-w-0", className)}>
+        <div className="flex min-w-0 items-center gap-1.5">
+          <TableStreetAddress
+            address={primary}
+            className="min-w-0"
+            action={
+              primary ? (
+                <CustomerUnverifiedAddressAction
+                  customer={resolvedCustomer}
+                  address={primary}
+                  label={t(getAddressLabelKey(primary, 0))}
+                />
+              ) : null
+            }
+          />
+          {!detailQuery.isFetching && total > 1 ? (
+            <TableMoreCountButton
+              aria-label={t("customers.addresses.viewMoreAria", { count: total - 1 })}
+              onClick={openSheet}
+            >
+              {t("customers.addresses.viewMore", { count: total - 1 })}
+            </TableMoreCountButton>
+          ) : null}
+        </div>
         {detailQuery.isFetching && total <= 1 ? (
           <p className="mt-0.5 text-xs text-muted-foreground">{t("customers.addresses.loadingAddresses")}</p>
-        ) : null}
-        {!detailQuery.isFetching && total > 1 ? (
-          <button
-            type="button"
-            aria-label={t("customers.addresses.viewMoreAria", { count: total - 1 })}
-            className="mt-0.5 text-left text-xs font-medium text-primary hover:underline"
-            onClick={openSheet}
-          >
-            {t("customers.addresses.viewMore", { count: total - 1 })}
-          </button>
         ) : null}
       </div>
 

@@ -456,6 +456,13 @@ function buildOrderSearchFilterGroups(
   if (params.assignedRouteOnly) {
     groups.push({ operator: "and", filters: [ASSIGNED_ROUTE_FILTER] });
   }
+  const scopedRouteId = params.scopedRouteId?.trim();
+  if (scopedRouteId) {
+    groups.push({
+      operator: "and",
+      filters: [{ field: "route.id", operator: "eq", value: scopedRouteId }],
+    });
+  }
   return groups;
 }
 
@@ -467,7 +474,7 @@ function hasOrderListFilters(params: OrderListParams): boolean {
     search: params.search,
     filterRows: params.filterRows,
     tableFilterFields: ORDER_TABLE_FILTER_FIELDS,
-    hasChipFilters: Boolean(params.assignedRouteOnly),
+    hasChipFilters: Boolean(params.assignedRouteOnly || params.scopedRouteId?.trim()),
   });
 }
 
@@ -519,13 +526,33 @@ function buildPickupSearchBody(params: OrderListParams) {
  * - Unfiltered: GET /pickups?page&offset&limit
  * - Search/filters: POST /pickups/search
  */
+/** `me` or a positive employee id — never a display name. */
+function normalizeRouteEmployeeParam(value: string | null | undefined): string | undefined {
+  if (value == null) return undefined;
+  const trimmed = value.trim();
+  if (!trimmed) return undefined;
+  if (trimmed === "me") return "me";
+  if (!/^\d+$/.test(trimmed)) return undefined;
+  const id = Number(trimmed);
+  if (!Number.isInteger(id) || id <= 0 || id > 65535) return undefined;
+  return trimmed;
+}
+
 export async function fetchOrders(params: OrderListParams = {}): Promise<PaginatedResult<Order>> {
+  const routeEmployee = normalizeRouteEmployeeParam(
+    params.routeEmployee === null || params.routeEmployee === undefined
+      ? undefined
+      : params.routeEmployee,
+  );
   return fetchPaginatedResourceList({
     endpoint: API_ENDPOINTS.PICKUPS,
-    client: params.routeEmployee ? {
-      get: (url, config) => apiClient.get(url, { ...config, params: { routeEmployee: params.routeEmployee } }),
-      post: (url, body, config) => apiClient.post(url, body, { ...config, params: { routeEmployee: params.routeEmployee } }),
-    } : undefined,
+    client: routeEmployee
+      ? {
+          get: (url, config) => apiClient.get(url, { ...config, params: { routeEmployee } }),
+          post: (url, body, config) =>
+            apiClient.post(url, body, { ...config, params: { routeEmployee } }),
+        }
+      : undefined,
     page: params.page ?? DEFAULT_ORDER_LIST_PARAMS.page,
     limit: params.limit ?? DEFAULT_ORDER_LIST_PARAMS.limit,
     offset: params.offset,
@@ -635,6 +662,48 @@ export async function fetchAllPickupsByRoutes(routeIds: string[]): Promise<Order
   }
 
   return [...byId.values()];
+}
+
+/**
+ * Resolve the sole scheduled route id for assigned pickups under `routeEmployee`.
+ * Used when Route Appointments is scoped to a supervisor and reorder/optimize
+ * should not require manually selecting every stop.
+ */
+export async function fetchUniqueAssignedRouteIdForEmployee(
+  routeEmployee: string,
+): Promise<{ routeId: string } | { conflict: "none" | "multiple" }> {
+  const employee = routeEmployee.trim();
+  if (!employee || employee === "me") {
+    return { conflict: "none" };
+  }
+
+  const routeIds = new Set<string>();
+  const limit = 100;
+  let page = 1;
+  let total = 0;
+
+  while (true) {
+    const result = await fetchOrders({
+      page,
+      limit,
+      routeEmployee: employee,
+      assignedRouteOnly: true,
+      sort: "id:asc",
+    });
+    total = result.total;
+
+    for (const order of result.items) {
+      const id = order.routeId?.trim();
+      if (id) routeIds.add(id);
+    }
+
+    if (routeIds.size > 1) return { conflict: "multiple" };
+    if (result.items.length === 0 || page * limit >= total) break;
+    page += 1;
+  }
+
+  if (routeIds.size === 0) return { conflict: "none" };
+  return { routeId: [...routeIds][0]! };
 }
 
 function buildRoutePickupsFilter(routeId: string): TableFilterRowState[] {

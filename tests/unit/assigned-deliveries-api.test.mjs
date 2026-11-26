@@ -180,3 +180,44 @@ test("route worklist applies the same employee selection to list and search, inc
   assert.equal(client.calls[1].config.params.routeEmployee, "72");
   assert.equal(collectLeaves(client.calls[1].body).some(filter => filter.field === "route.id" && filter.operator === "neq"), false);
 });
+
+test("employee and daily-route scope reject display names so Jonathan A cannot select Jonathan B", async () => {
+  const client = createClient();
+  const { fetchAssignedDeliveryBarcodesPage } = loadFeature("src/lib/deliveries/api/assigned-deliveries-api.ts", client);
+  const params = { page: 1, limit: 25, sort: "receiver.address.city:asc" };
+  await fetchAssignedDeliveryBarcodesPage(params, undefined, "Jonathan A");
+  assert.equal(client.calls[0].config.params, undefined);
+  await fetchAssignedDeliveryBarcodesPage(params, undefined, {
+    routeEmployee: null,
+    scopedRouteId: "North Jonathan route",
+  });
+  assert.equal(
+    collectLeaves(client.calls[1].body).some((filter) => filter.field === "route.id" && filter.operator === "eq"),
+    false,
+  );
+});
+
+test("daily-route scope omits routeEmployee and filters by route.id only", async () => {
+  const client = createClient();
+  const { fetchAssignedDeliveryBarcodesPage } = loadFeature("src/lib/deliveries/api/assigned-deliveries-api.ts", client);
+  const routeId = "65f000000000000000000042";
+  await fetchAssignedDeliveryBarcodesPage(
+    { page: 1, limit: 25, sort: "receiver.address.city:asc" },
+    undefined,
+    { routeEmployee: null, scopedRouteId: routeId },
+  );
+  assert.equal(client.calls[0].method, "POST");
+  assert.equal(client.calls[0].config.params, undefined);
+  assert.equal(
+    collectLeaves(client.calls[0].body).some(
+      (filter) => filter.field === "route.id" && filter.operator === "eq" && filter.value === routeId,
+    ),
+    true,
+  );
+  assert.equal(
+    collectLeaves(client.calls[0].body).some(
+      (filter) => filter.field === "route.id" && filter.operator === "neq",
+    ),
+    false,
+  );
+});

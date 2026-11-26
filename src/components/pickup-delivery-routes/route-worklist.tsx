@@ -1,30 +1,64 @@
 "use client";
 
-import { Fragment, useState, type ReactNode } from "react";
-import { EmployeePicker } from "@/components/employees/employee-picker";
-import { useAuth } from "@/lib/auth/hooks/use-auth";
-import { PERMISSIONS } from "@/lib/auth/permissions";
-import { useTranslation } from "@/lib/i18n";
+import { useState, type ReactNode } from "react";
 
-export function RouteWorklist({ canViewOthers, children }: {
+import {
+  RouteWorkScopeFilter,
+  type RouteWorkScopeState,
+} from "@/components/pickup-delivery-routes/route-work-scope-filter";
+import {
+  resolveRouteWorkScope,
+} from "@/lib/pickup-delivery-routes/route-work-scope";
+import type { RouteType } from "@/lib/pickup-delivery-routes/types";
+
+export type RouteWorklistChildProps = {
+  /**
+   * API `routeEmployee` scope.
+   * - `"me"` — default assigned work
+   * - employee id — supervisor/employee filter (exact id, never name)
+   * - `null` — omit param (daily-route filter with broad view permission)
+   */
+  routeEmployee: string | null;
+  /** Injected `route.id` equality filter when scoping to a daily route. */
+  scopedRouteId: string | null;
+  /** Stable remount / query-key fragment for the active scope. */
+  scopeKey: string;
+  /** Filter-panel control placed below advanced filters when the user can view others. */
+  scopeFilter: ReactNode;
+  /** True when mode + value are both set (scoped away from default “my work”). */
+  hasScopeFilter: boolean;
+  clearScopeFilter: () => void;
+};
+
+const EMPTY_SCOPE: RouteWorkScopeState = { mode: "", value: "" };
+
+export {
+  isExactDailyRouteId,
+  isExactRouteEmployeeId,
+  resolveRouteWorkScope,
+} from "@/lib/pickup-delivery-routes/route-work-scope";
+
+export function RouteWorklist({
+  canViewOthers,
+  routeType,
+  children,
+}: {
   canViewOthers: boolean;
-  children: (employee: string) => ReactNode;
+  routeType: RouteType;
+  children: (props: RouteWorklistChildProps) => ReactNode;
 }) {
-  const { t } = useTranslation();
-  const { hasPermission } = useAuth();
-  const [employee, setEmployee] = useState("");
-  const scope = canViewOthers && employee ? employee : "me";
-  return <>
-    {canViewOthers && <div className="mb-3 max-w-sm">
-      <label className="text-sm font-medium" htmlFor="route-worklist-employee">{t("orders.routeWorkEmployee")}</label>
-      {hasPermission(PERMISSIONS.employeesView.name, PERMISSIONS.employeesView.resourceType)
-        ? <EmployeePicker id="route-worklist-employee" value={employee} onChange={setEmployee} placeholder={t("orders.myRouteWork")} />
-        : <input id="route-worklist-employee" className="flex h-9 w-full rounded-md border px-3" type="number" min={1} max={65535}
-            placeholder={t("orders.myRouteWork")} onBlur={(event) => {
-              const input = event.currentTarget;
-              if (input.reportValidity()) setEmployee(input.value);
-            }} />}
-    </div>}
-    <Fragment key={scope}>{children(scope)}</Fragment>
-  </>;
+  const [scope, setScope] = useState<RouteWorkScopeState>(EMPTY_SCOPE);
+  const resolved = resolveRouteWorkScope(canViewOthers, scope);
+  // Keep the workspace mounted when scope changes so the filter panel does not
+  // remount/re-open from leftover session handoff state. Selection resets via
+  // query-key / selection-reset keyed on scopeKey in the child.
+  const scopeFilter = canViewOthers ? (
+    <RouteWorkScopeFilter routeType={routeType} value={scope} onChange={setScope} />
+  ) : null;
+
+  return children({
+    ...resolved,
+    scopeFilter,
+    clearScopeFilter: () => setScope(EMPTY_SCOPE),
+  });
 }

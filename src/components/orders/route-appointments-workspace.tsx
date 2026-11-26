@@ -7,7 +7,20 @@ import { useRouteAppointmentsAccess } from "@/lib/orders/hooks/use-route-appoint
 
 export function RouteAppointmentsWorkspace() {
   const { scopeKey, canView, canViewAll } = useRouteAppointmentsAccess();
-  return canView ? <RouteWorklist key={scopeKey} canViewOthers={canViewAll}>{(employee) => <OrdersWorkspace routeMode routeEmployee={employee} />}</RouteWorklist> : null;
+  return canView ? (
+    <RouteWorklist key={scopeKey} canViewOthers={canViewAll} routeType="pickup">
+      {(work) => (
+        <OrdersWorkspace
+          routeMode
+          routeEmployee={work.routeEmployee}
+          scopedRouteId={work.scopedRouteId}
+          routeScopeFilter={work.scopeFilter}
+          hasRouteScopeFilter={work.hasScopeFilter}
+          onClearRouteScopeFilter={work.clearScopeFilter}
+        />
+      )}
+    </RouteWorklist>
+  ) : null;
 }
 
 export function RouteAppointmentsMapWorkspace() {

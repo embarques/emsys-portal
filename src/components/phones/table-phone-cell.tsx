@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 
+import { TableMoreCountButton } from "@/components/app-shell/table-more-count-button";
 import { useTranslation } from "@/lib/i18n";
 import { getRecordPhoneDisplayNumber } from "@/lib/phones/phones";
 import { cn } from "@/lib/utils";
@@ -63,15 +64,12 @@ export function TablePhoneCell({ phones, className, callable = false, onShowAll 
           );
         })}
         {moreCount > 0 && !showInlineExpanded ? (
-          <button
-            type="button"
-            data-stop-row-click
+          <TableMoreCountButton
             aria-label={t("phones.moreCountAria", { count: moreCount })}
-            className="shrink-0 whitespace-nowrap font-medium text-primary hover:underline"
             onClick={handleShowMore}
           >
             {t("phones.moreCount", { count: moreCount })}
-          </button>
+          </TableMoreCountButton>
         ) : null}
       </div>
     </div>

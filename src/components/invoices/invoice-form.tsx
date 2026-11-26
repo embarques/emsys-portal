@@ -1056,6 +1056,7 @@ export function InvoiceForm({
               onValueChange={updatePickupEmployee}
               placeholder={pickupEmployeePlaceholder}
               searchPlaceholder={t("invoices.form.placeholders.searchEmployees")}
+              emptyMessage={t("invoices.form.placeholders.noEmployeesFound")}
               manualFiltering
               loading={pickupEmployeeSearch.isFetching || employeesQuery.isFetching}
               onSearchChange={setPickupEmployeeQuery}

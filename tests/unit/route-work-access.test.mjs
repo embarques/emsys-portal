@@ -94,6 +94,60 @@ test("assigned delivery completion still requires invoice read and update; print
   assert.equal(deliveryAccess(complete, { companyId: null }).canDeliver, false);
 });
 
+test("route work scope filters by exact employee id and daily-route id, never by name", () => {
+  const {
+    isExactRouteEmployeeId,
+    isExactDailyRouteId,
+    resolveRouteWorkScope,
+  } = load("src/lib/pickup-delivery-routes/route-work-scope.ts", {
+    "@/components/pickup-delivery-routes/route-work-scope-filter": {},
+  });
+
+  assert.equal(isExactRouteEmployeeId("72"), true);
+  assert.equal(isExactRouteEmployeeId("Jonathan A"), false);
+  assert.equal(isExactRouteEmployeeId("72Jonathan"), false);
+  assert.equal(isExactRouteEmployeeId("0"), false);
+  assert.equal(isExactDailyRouteId("65f000000000000000000001"), true);
+  assert.equal(isExactDailyRouteId("2026-11-26_Van_Jonathan A"), false);
+
+  const jonathanA = resolveRouteWorkScope(true, { mode: "supervisor", value: "101" });
+  assert.deepEqual(jonathanA, {
+    routeEmployee: "101",
+    scopedRouteId: null,
+    scopeKey: "supervisor:101",
+    hasScopeFilter: true,
+  });
+  // Same first name must not activate a name-based scope.
+  assert.deepEqual(
+    resolveRouteWorkScope(true, { mode: "supervisor", value: "Jonathan A" }),
+    { routeEmployee: "me", scopedRouteId: null, scopeKey: "me", hasScopeFilter: false },
+  );
+  assert.deepEqual(
+    resolveRouteWorkScope(true, { mode: "supervisor", value: "102" }),
+    {
+      routeEmployee: "102",
+      scopedRouteId: null,
+      scopeKey: "supervisor:102",
+      hasScopeFilter: true,
+    },
+  );
+
+  const route = resolveRouteWorkScope(true, {
+    mode: "dailyRoute",
+    value: "65f000000000000000000042",
+  });
+  assert.deepEqual(route, {
+    routeEmployee: null,
+    scopedRouteId: "65f000000000000000000042",
+    scopeKey: "dailyRoute:65f000000000000000000042",
+    hasScopeFilter: true,
+  });
+  assert.deepEqual(
+    resolveRouteWorkScope(true, { mode: "dailyRoute", value: "North Jonathan route" }),
+    { routeEmployee: "me", scopedRouteId: null, scopeKey: "me", hasScopeFilter: false },
+  );
+});
+
 test("barcode delivery requires a pending piece, linked invoice, and positive numeric delivery", () => {
   const { canStartBarcodeDelivery } = load("src/lib/deliveries/utils/can-start-barcode-delivery.ts");
   const barcode = { invoiceId: "invoice-1", delivery: { id: 10 }, status: { id: 6, name: "CONDUCE" } };

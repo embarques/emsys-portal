@@ -91,61 +91,62 @@ export function TableAdvancedFilterBuilder({
         const canPickValue = Boolean(definition && (usesRange || row.operator));
 
         return (
-          <div key={row.id} className="flex min-w-0 items-center gap-2">
-            <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
-              {index === 0 ? (
-                <span className="w-24 shrink-0 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                  {t("common.table.where")}
-                </span>
-              ) : (
-                <TableFilterSelect
-                  aria-label={t("tableFields.filter.joinAria", ariaIndex)}
-                  className="w-24 shrink-0 flex-none text-xs font-semibold uppercase tracking-wide"
-                  searchable={false}
-                  value={row.join}
-                  options={filterJoinOptions}
-                  onChange={(value) =>
-                    updateRow(row.id, { join: value as TableFilterRowState["join"] })
-                  }
-                />
-              )}
-
+          <div key={row.id} className="flex min-w-0 items-start gap-2">
+            {index === 0 ? (
+              <span className="inline-flex h-9 w-24 shrink-0 items-center text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                {t("common.table.where")}
+              </span>
+            ) : (
               <TableFilterSelect
-                aria-label={t("tableFields.filter.fieldAria", ariaIndex)}
-                className="w-full shrink-0 flex-none"
-                fitToOptions
-                value={row.field}
-                placeholder={t("common.table.field")}
-                mutedWhenEmpty
-                options={displayFields.map((field) => ({ value: field.field, label: field.label }))}
-                onChange={(value) => updateRow(row.id, { field: value })}
+                aria-label={t("tableFields.filter.joinAria", ariaIndex)}
+                className="w-24 shrink-0 flex-none text-xs font-semibold uppercase tracking-wide"
+                searchable={false}
+                value={row.join}
+                options={filterJoinOptions}
+                onChange={(value) =>
+                  updateRow(row.id, { join: value as TableFilterRowState["join"] })
+                }
               />
+            )}
 
-              {usesRange ? (
-                <span className="inline-flex h-9 w-[7.25rem] shrink-0 items-center rounded-md border border-input bg-muted/40 px-3 text-xs font-medium text-muted-foreground">
-                  {t("common.table.inRange")}
-                </span>
-              ) : (
+            {/* Controls column: first row splits full width; value stays aligned under it. */}
+            <div className="flex min-w-0 flex-1 flex-col gap-2">
+              <div className="flex min-w-0 items-center gap-2">
                 <TableFilterSelect
-                  aria-label={t("tableFields.filter.conditionAria", ariaIndex)}
-                  className="w-full shrink-0 flex-none"
-                  fitToOptions
-                  value={row.operator}
-                  placeholder={t("common.table.condition")}
+                  aria-label={t("tableFields.filter.fieldAria", ariaIndex)}
+                  className="min-w-0 flex-1"
+                  value={row.field}
+                  placeholder={t("common.table.field")}
                   mutedWhenEmpty
-                  disabled={!canPickOperator}
-                  options={operators.map((operator) => ({
-                    value: operator,
-                    label: filterOperatorLabels[operator],
-                  }))}
-                  onChange={(value) => updateRow(row.id, { operator: value })}
+                  options={displayFields.map((field) => ({ value: field.field, label: field.label }))}
+                  onChange={(value) => updateRow(row.id, { field: value })}
                 />
-              )}
+
+                {usesRange ? (
+                  <span className="inline-flex h-9 min-w-0 flex-1 items-center rounded-md border border-input bg-muted/40 px-3 text-xs font-medium text-muted-foreground">
+                    {t("common.table.inRange")}
+                  </span>
+                ) : (
+                  <TableFilterSelect
+                    aria-label={t("tableFields.filter.conditionAria", ariaIndex)}
+                    className="min-w-0 flex-1"
+                    value={row.operator}
+                    placeholder={t("common.table.condition")}
+                    mutedWhenEmpty
+                    disabled={!canPickOperator}
+                    options={operators.map((operator) => ({
+                      value: operator,
+                      label: filterOperatorLabels[operator],
+                    }))}
+                    onChange={(value) => updateRow(row.id, { operator: value })}
+                  />
+                )}
+              </div>
 
               {usesSelect ? (
                 <TableFilterSelect
                   aria-label={t("tableFields.filter.valueAria", ariaIndex)}
-                  className="min-w-0 flex-1"
+                  className="min-w-0 w-full"
                   value={row.value}
                   placeholder={t("common.table.value")}
                   mutedWhenEmpty
@@ -159,7 +160,7 @@ export function TableAdvancedFilterBuilder({
               ) : (
                 <Input
                   aria-label={t("tableFields.filter.valueAria", ariaIndex)}
-                  className="h-9 min-w-[12rem] flex-1 shadow-xs disabled:cursor-not-allowed disabled:opacity-50"
+                  className="h-9 w-full shadow-xs disabled:cursor-not-allowed disabled:opacity-50"
                   value={row.value}
                   disabled={!canPickValue}
                   placeholder={canPickValue ? (definition?.placeholder ?? t("common.table.enterValue")) : t("common.table.value")}
@@ -172,7 +173,7 @@ export function TableAdvancedFilterBuilder({
               type="button"
               variant="ghost"
               size="icon"
-              className="h-9 w-9 shrink-0 self-start text-muted-foreground hover:text-destructive"
+              className="h-9 w-9 shrink-0 text-muted-foreground hover:text-destructive"
               aria-label={t("tableFields.filter.removeAria", ariaIndex)}
               onClick={() => onChange(removeTableFilterRow(rows, row.id))}
             >
