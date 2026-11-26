@@ -240,3 +240,13 @@ test("linking from either directory writes only the two identifiers and surfaces
   assert.deepEqual(requests[0], { url: "/employees/17/user-link", body: { userId: 42 } });
   await assert.rejects(api.linkEmployeeUser(18, 42), /Link conflict/);
 });
+
+test("opening the link picker requires the named link grant and read access to both directories", () => {
+  const { canUseEmployeeUserLink } = loadFeature("src/lib/employees/user-link.ts", {});
+  const required = ["canLinkEmployeeUser", "canViewEmployee", "canViewUser"];
+  const allowed = grants => canUseEmployeeUserLink(name => grants.includes(name));
+  assert.equal(allowed(required), true);
+  for (const missing of required) {
+    assert.equal(allowed([...required.filter(name => name !== missing), "canUpdateEmployee", "canUpdateUser"]), false);
+  }
+});

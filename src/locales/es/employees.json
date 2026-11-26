@@ -8,7 +8,7 @@
     "success": "Empleado y usuario vinculados.",
     "failed": "No se pudo vincular al empleado con el usuario.",
     "search": "Buscar por nombre",
-    "linked": "Este empleado está vinculado a {name}.",
+    "linked": "Este empleado está vinculado a {{name}}.",
     "conflict": "Este empleado o usuario ya tiene otro vínculo."
   },
   "errors": {

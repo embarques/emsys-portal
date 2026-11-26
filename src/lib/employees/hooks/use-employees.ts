@@ -6,6 +6,8 @@ import {
   useQueries,
   useQueryClient,
 } from "@tanstack/react-query";
+import { invalidateEmployeeLink } from "@/lib/employees/user-link";
+import { useAppSelector } from "@/lib/store/hooks";
 import { useCallback } from "react";
 import { useWorkspaceQuery } from "@/lib/query/use-workspace-query";
 
@@ -146,26 +148,25 @@ function invalidateEmployees(queryClient: ReturnType<typeof useQueryClient>) {
 }
 
 export function useCreateEmployee() {
+  const companyId = useAppSelector(state => state.auth.companyId);
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: (values: EmployeeFormValues) => createEmployee(values),
-    onSuccess: () => invalidateEmployees(queryClient),
+    onSuccess: (_data, values) => values.user ? invalidateEmployeeLink(queryClient, companyId) : invalidateEmployees(queryClient),
   });
 }
 
 export function useUpdateEmployee() {
+  const companyId = useAppSelector(state => state.auth.companyId);
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: ({ employeeId, values }: { employeeId: string; values: EmployeeFormValues }) =>
       updateEmployee(employeeId, values),
-    onSuccess: (_data, variables) => {
-      invalidateEmployees(queryClient);
-      queryClient.invalidateQueries({
-        queryKey: queryKeys.employees.detail(variables.employeeId),
-      });
-    },
+    onSuccess: (_data, { values }) => values.clearUserLink || values.user
+      ? invalidateEmployeeLink(queryClient, companyId)
+      : invalidateEmployees(queryClient),
   });
 }
 

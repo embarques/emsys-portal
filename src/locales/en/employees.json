@@ -8,7 +8,7 @@
     "success": "Employee and user linked.",
     "failed": "Unable to link employee and user.",
     "search": "Search by name",
-    "linked": "This employee is linked to {name}.",
+    "linked": "This employee is linked to {{name}}.",
     "conflict": "This employee or user already has a different link."
   },
   "errors": {

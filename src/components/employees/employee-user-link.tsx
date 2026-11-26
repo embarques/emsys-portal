@@ -1,7 +1,7 @@
 "use client";
 
 import { useId, useRef, useState } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
@@ -18,14 +18,14 @@ import { Label } from "@/components/ui/label";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { useAuth } from "@/lib/auth/hooks/use-auth";
-import { PERMISSIONS } from "@/lib/auth/permissions";
+import { canUseEmployeeUserLink } from "@/lib/employees/user-link";
 import { useTranslation } from "@/lib/i18n";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { useEmployeeUserLink } from "@/lib/employees/hooks/use-employee-user-link";
 import { normalizeApiError } from "@/lib/api/axios";
 import { useUserError } from "@/lib/errors";
 
-const selection = z.object({ id: z.string().regex(/^[1-9][0-9]*$/) });
+const selection = z.object({ value: z.string().regex(/^[1-9][0-9]*$/), label: z.string() });
 
 export function EmployeeUserLink({
   side,
@@ -47,16 +47,12 @@ export function EmployeeUserLink({
   const delayed = useDebouncedValue(search, 250);
   const inputId = useId();
   const submitting = useRef(false);
-  const form = useForm<{ id: string }>({
+  const form = useForm<z.infer<typeof selection>>({
     resolver: zodResolver(selection),
-    defaultValues: { id: "" },
+    defaultValues: { value: "", label: "" },
   });
   const target = side === "employee" ? "user" : "employee";
-  const allowed = [
-    PERMISSIONS.employeeUserLink,
-    PERMISSIONS.usersView,
-    PERMISSIONS.employeesView,
-  ].every((p) => hasPermission(p.name, p.resourceType));
+  const allowed = canUseEmployeeUserLink(hasPermission);
   const { candidates, mutation } = useEmployeeUserLink(
     target,
     delayed,
@@ -67,15 +63,19 @@ export function EmployeeUserLink({
       ? "employees.link.userAction"
       : "employees.link.employeeAction",
   );
-  const options = candidates.data ?? [];
-  const selected = form.watch("id");
+  const choices = candidates.data ?? [];
+  const selected = useWatch({ control: form.control, name: "value" });
+  const label = useWatch({ control: form.control, name: "label" });
+  const options = !search && selected && !choices.some(choice => choice.value === selected)
+    ? [{ value: selected, label }, ...choices]
+    : choices;
   const pending = mutation.isPending || form.formState.isSubmitting;
   const close = () => {
     setOpen(false);
     setSearch("");
     form.reset();
   };
-  async function submit({ id: choice }: { id: string }) {
+  async function submit({ value: choice }: z.infer<typeof selection>) {
     if (submitting.current) return;
     submitting.current = true;
     const candidateId = Number(choice);
@@ -129,7 +129,7 @@ export function EmployeeUserLink({
           <DialogTitle>{action}</DialogTitle>
           <DialogDescription>{name}</DialogDescription>
         </DialogHeader>
-        <form onSubmit={form.handleSubmit(submit)}>
+        <form onSubmit={event => void form.handleSubmit(submit)(event)}>
           <Label htmlFor={inputId}>
             {t(
               target === "user"
@@ -143,7 +143,8 @@ export function EmployeeUserLink({
             options={options}
             onValueChange={(value) => {
               form.clearErrors();
-              form.setValue("id", value);
+              form.setValue("value", value);
+              form.setValue("label", options.find(choice => choice.value === value)?.label ?? "");
             }}
             onSearchChange={setSearch}
             manualFiltering

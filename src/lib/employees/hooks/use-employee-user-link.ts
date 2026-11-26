@@ -2,7 +2,7 @@
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useWorkspaceQuery } from "@/lib/query/use-workspace-query";
-import { queryKeys } from "@/lib/query/query-keys";
+import { invalidateEmployeeLink } from "@/lib/employees/user-link";
 import { useAuth } from "@/lib/auth/hooks/use-auth";
 import { useAppSelector } from "@/lib/store/hooks";
 import {
@@ -60,17 +60,7 @@ export function useEmployeeUserLink(
       employeeId: number;
       userId: number;
     }) => linkEmployeeUser(employeeId, userId),
-    onSuccess: async () => {
-      await Promise.all([
-        client.invalidateQueries({ queryKey: queryKeys.employees.all }),
-        client.invalidateQueries({
-          queryKey: ["responsibility-employee", companyId],
-        }),
-        client.invalidateQueries({
-          queryKey: [...queryKeys.invoices.all, "assigned-context", companyId],
-        }),
-      ]);
-    },
+    onSuccess: () => invalidateEmployeeLink(client, companyId),
   });
   return { candidates, mutation };
 }
