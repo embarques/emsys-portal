@@ -17,9 +17,21 @@ type EmployeePickerProps = {
   placeholder: string;
   searchPlaceholder?: string;
   emptyMessage?: string;
+  /** Stack above nested surfaces (e.g. directory filter panel uses z-[110]). */
+  contentClassName?: string;
 };
 
-export function EmployeePicker({ id, value, onChange, disabled, invalid, placeholder, searchPlaceholder, emptyMessage }: EmployeePickerProps) {
+export function EmployeePicker({
+  id,
+  value,
+  onChange,
+  disabled,
+  invalid,
+  placeholder,
+  searchPlaceholder,
+  emptyMessage,
+  contentClassName,
+}: EmployeePickerProps) {
   const { t } = useTranslation();
   const [query, setQuery] = useState("");
   const debouncedQuery = useDebouncedValue(query, 300).trim();
@@ -37,9 +49,11 @@ export function EmployeePicker({ id, value, onChange, disabled, invalid, placeho
       .map((employee) => ({
         value: String(employee.id),
         label: employee.name,
-        description: employee.title || undefined,
+        keywords: [employee.name, employee.title, employee.department],
       }));
-    if (value && picked?.value === value && !built.some((option) => option.value === value)) built.unshift(picked);
+    if (value && picked?.value === value && !built.some((option) => option.value === value)) {
+      built.unshift(picked);
+    }
     return built;
   }, [debouncedQuery, list.data?.items, picked, search.data?.items, value]);
 
@@ -59,7 +73,8 @@ export function EmployeePicker({ id, value, onChange, disabled, invalid, placeho
       aria-invalid={invalid}
       placeholder={placeholder}
       searchPlaceholder={searchPlaceholder ?? t("invoices.form.placeholders.searchEmployees")}
-      emptyMessage={emptyMessage}
+      emptyMessage={emptyMessage ?? t("invoices.form.placeholders.noEmployeesFound")}
+      contentClassName={contentClassName}
     />
   );
 }

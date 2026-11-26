@@ -244,14 +244,6 @@ export function DailyIncomeTransactionViewSheet({
             onEdit={canEdit ? () => onEdit(resolved) : undefined}
             leading={
               <>
-                <TableSelectionActionsMenu hidden={!showLifecycleMenu}>
-                  <JournalLifecycleActions
-                    key={`${resolved.id}:${resolved.version}`}
-                    journal={resolved}
-                    hasEditAction={canEdit}
-                    variant="menu"
-                  />
-                </TableSelectionActionsMenu>
                 {showPrintReceipt ? (
                   <Button
                     type="button"
@@ -269,6 +261,14 @@ export function DailyIncomeTransactionViewSheet({
                     {t("accounting.dailyIncome.actions.printReceipt")}
                   </Button>
                 ) : null}
+                <TableSelectionActionsMenu hidden={!showLifecycleMenu}>
+                  <JournalLifecycleActions
+                    key={`${resolved.id}:${resolved.version}`}
+                    journal={resolved}
+                    hasEditAction={canEdit}
+                    variant="menu"
+                  />
+                </TableSelectionActionsMenu>
               </>
             }
           />

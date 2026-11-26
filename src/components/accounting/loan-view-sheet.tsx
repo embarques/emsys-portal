@@ -257,6 +257,21 @@ export function LoanViewSheet({
           <RecordViewSheetActions
             leading={
               <>
+                {onPrint ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className={cn("whitespace-nowrap", tableSelectionActionStyles.print)}
+                    disabled={isPrinting}
+                    onClick={() => onPrint(loan)}
+                  >
+                    <Printer className="size-4" />
+                    {isPrinting
+                      ? t("accounting.loans.payments.printPreparing")
+                      : t("accounting.loans.payments.print")}
+                  </Button>
+                ) : null}
                 <TableSelectionActionsMenu hidden={!showSecondaryActionsMenu}>
                   {onExportExcel ? (
                     <TableSelectionActionItem
@@ -281,21 +296,6 @@ export function LoanViewSheet({
                     />
                   ) : null}
                 </TableSelectionActionsMenu>
-                {onPrint ? (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className={cn("whitespace-nowrap", tableSelectionActionStyles.print)}
-                    disabled={isPrinting}
-                    onClick={() => onPrint(loan)}
-                  >
-                    <Printer className="size-4" />
-                    {isPrinting
-                      ? t("accounting.loans.payments.printPreparing")
-                      : t("accounting.loans.payments.print")}
-                  </Button>
-                ) : null}
               </>
             }
           />

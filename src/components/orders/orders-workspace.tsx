@@ -2,7 +2,7 @@
 
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import {
   Check,
   CheckCircle2,
@@ -126,7 +126,10 @@ import {
   useSetOrdersCompleted,
   useUpdateOrder,
 } from "@/lib/orders/hooks/use-orders";
-import { fetchAllPickupsByRoutes } from "@/lib/orders/api/orders-api";
+import {
+  fetchAllPickupsByRoutes,
+  fetchUniqueAssignedRouteIdForEmployee,
+} from "@/lib/orders/api/orders-api";
 import {
   DEFAULT_ORDER_LIST_PARAMS,
   DEFAULT_ORDER_LIST_SORT,
@@ -363,7 +366,23 @@ const defaultFilters: OrderFilterState = {
   rows: [],
 };
 
-export function OrdersWorkspace({ routeMode = false, routeEmployee }: { routeMode?: boolean; routeEmployee?: string } = {}) {
+export function OrdersWorkspace({
+  routeMode = false,
+  routeEmployee,
+  scopedRouteId = null,
+  routeScopeFilter = null,
+  hasRouteScopeFilter = false,
+  onClearRouteScopeFilter,
+}: {
+  routeMode?: boolean;
+  /** `null` omits the query param (daily-route broad scope). */
+  routeEmployee?: string | null;
+  scopedRouteId?: string | null;
+  /** Route appointments: supervisor / daily-route scope control below advanced filters. */
+  routeScopeFilter?: ReactNode;
+  hasRouteScopeFilter?: boolean;
+  onClearRouteScopeFilter?: () => void;
+} = {}) {
   const routeAccess = useRouteAppointmentsAccess();
   const { t } = useTranslation();
   const tabScope = useWorkspaceTabScope();
@@ -376,7 +395,10 @@ export function OrdersWorkspace({ routeMode = false, routeEmployee }: { routeMod
   const debouncedQuery = useDebouncedValue(filters.query);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const { page, setPage, pageSize, pageLimit, changePageSize, rememberTotal } = useTablePageSize();
-  const { sort, onSortChange } = useTableSort(routeMode ? "route.id:asc,orderNumber:asc,id:asc" : DEFAULT_ORDER_LIST_PARAMS.sort, () => setPage(1));
+  const { sort, onSortChange } = useTableSort(
+    routeMode ? "orderNumber:asc,id:asc" : DEFAULT_ORDER_LIST_PARAMS.sort,
+    () => setPage(1),
+  );
   const [viewOrder, setViewOrder] = useState<Order | null>(null);
   const [isOpeningReorderMap, setIsOpeningReorderMap] = useState(false);
   const [formMode, setFormMode] = useState<"add" | "edit" | null>(null);
@@ -392,19 +414,29 @@ export function OrdersWorkspace({ routeMode = false, routeEmployee }: { routeMod
   const [completionConfirm, setCompletionConfirm] = useState<boolean | null>(null);
   /** When set, completion / route dialogs act on these orders instead of table selection. */
   const [bulkActionOrders, setBulkActionOrders] = useState<Order[] | null>(null);
+  const listFilterRows = useMemo(
+    () =>
+      routeMode
+        ? filters.rows.filter((row) => row.field !== PREDEFINED_ROUTE_FILTER_FIELD)
+        : filters.rows,
+    [filters.rows, routeMode],
+  );
   const listParams = useMemo(
     () =>
       buildOrderListParams({
         page,
         limit: pageLimit,
         query: debouncedQuery,
-        rows: filters.rows,
+        rows: listFilterRows,
         sort,
       }),
-    [debouncedQuery, filters.rows, page, pageLimit, sort],
+    [debouncedQuery, listFilterRows, page, pageLimit, sort],
   );
 
-  const { data, isLoading, isError, error, isFetching } = useOrders({ ...listParams, routeEmployee }, { routeMode, enabled: !routeMode || routeAccess.canView });
+  const { data, isLoading, isError, error, isFetching } = useOrders(
+    { ...listParams, routeEmployee, scopedRouteId },
+    { routeMode, enabled: !routeMode || routeAccess.canView },
+  );
   const { data: usersData, isLoading: usersLoading } = useUsers({
     page: 1,
     limit: 100,
@@ -425,8 +457,11 @@ export function OrdersWorkspace({ routeMode = false, routeEmployee }: { routeMod
   const duplicateConfirmation = useDuplicatePendingAppointmentConfirmation(!routeMode);
   const appointmentInvoice = useCreateAppointmentInvoice(routeMode ? "/route-appointments" : "/appointments");
   const pickupRouteLookup = useActiveRouteLookup("pickup", 500, { enabled: !routeMode });
+  // Predefined routes are an Appointments-only coverage filter, not route-assignment scope.
   const predefinedRouteFilter = usePredefinedRouteFilterOptions(
-    filtersOpen || filters.rows.some((row) => row.field === PREDEFINED_ROUTE_FILTER_FIELD && row.value.trim()),
+    !routeMode &&
+      (filtersOpen ||
+        filters.rows.some((row) => row.field === PREDEFINED_ROUTE_FILTER_FIELD && row.value.trim())),
   );
   const orderFilterFields = useOrderFilterFields();
   const advancedFilterFields = orderFilterFields.filter((field) => field.field !== PREDEFINED_ROUTE_FILTER_FIELD);
@@ -435,6 +470,7 @@ export function OrdersWorkspace({ routeMode = false, routeEmployee }: { routeMod
   const canRetryLegacySync = !routeMode || hasPermission(PERMISSIONS.pickupsSyncLegacy.name, PERMISSIONS.pickupsSyncLegacy.resourceType);
   const canCreatePredefinedRoute = !routeMode && hasPermission(PERMISSIONS.predefinedRoutesCreate.name, PERMISSIONS.predefinedRoutesCreate.resourceType);
   function selectPredefinedRoute(value: string) {
+    if (routeMode) return;
     setFilters((current) => ({ ...current, rows: [
       ...current.rows.filter((row) => row.field !== PREDEFINED_ROUTE_FILTER_FIELD),
       ...(value ? [{ id: "predefined-route", join: "and" as const, field: PREDEFINED_ROUTE_FILTER_FIELD, operator: "eq", value }] : []),
@@ -442,22 +478,31 @@ export function OrdersWorkspace({ routeMode = false, routeEmployee }: { routeMod
     setPage(1);
   }
   function changeAdvancedRows(rows: typeof filters.rows) {
-    setFilters((current) => ({ ...current, rows: [...rows, ...current.rows.filter((row) => row.field === PREDEFINED_ROUTE_FILTER_FIELD)] }));
+    setFilters((current) => ({
+      ...current,
+      rows: routeMode
+        ? rows.filter((row) => row.field !== PREDEFINED_ROUTE_FILTER_FIELD)
+        : [...rows, ...current.rows.filter((row) => row.field === PREDEFINED_ROUTE_FILTER_FIELD)],
+    }));
     setPage(1);
   }
   const predefinedRouteCreate = usePredefinedRouteWorkspace((route) => selectPredefinedRoute(String(route.id)));
-  const predefinedRouteRow = predefinedRouteFilter.canView ? (
-    <PredefinedRouteFilterRow
-      value={selectedPredefinedRoute}
-      options={predefinedRouteFilter.options}
-      loading={predefinedRouteFilter.isLoading}
-      error={predefinedRouteFilter.isError ? normalizeApiError(predefinedRouteFilter.error).message : undefined}
-      canCreate={canCreatePredefinedRoute}
-      onChange={selectPredefinedRoute}
-      onAdd={() => { setFiltersOpen(false); predefinedRouteCreate.edit(null); }}
-      onRetry={() => void predefinedRouteFilter.refetch()}
-    />
-  ) : null;
+  const predefinedRouteRow =
+    !routeMode && predefinedRouteFilter.canView ? (
+      <PredefinedRouteFilterRow
+        value={selectedPredefinedRoute}
+        options={predefinedRouteFilter.options}
+        loading={predefinedRouteFilter.isLoading}
+        error={predefinedRouteFilter.isError ? normalizeApiError(predefinedRouteFilter.error).message : undefined}
+        canCreate={canCreatePredefinedRoute}
+        onChange={selectPredefinedRoute}
+        onAdd={() => {
+          setFiltersOpen(false);
+          predefinedRouteCreate.edit(null);
+        }}
+        onRetry={() => void predefinedRouteFilter.refetch()}
+      />
+    ) : null;
   const orders = useResolvedPaginatedItems(data?.items, data?.total, isFetching);
   const totalOrders = data?.total ?? 0;
   rememberTotal(totalOrders);
@@ -476,7 +521,12 @@ export function OrdersWorkspace({ routeMode = false, routeEmployee }: { routeMod
   const isPrinting = generatePickupReportMutation.isPending;
 
   useTableSelectionReset(
-    buildTableSelectionResetKey(debouncedQuery, filters.rows),
+    buildTableSelectionResetKey(
+      debouncedQuery,
+      filters.rows,
+      routeEmployee ?? "me",
+      scopedRouteId ?? "",
+    ),
     setSelectedIds,
   );
 
@@ -487,12 +537,29 @@ export function OrdersWorkspace({ routeMode = false, routeEmployee }: { routeMod
     if (!context) return;
 
     clearOrdersListContext();
-    setFilters(context.filters);
+
+    // Full reload should not revive a prior tab handoff (e.g. Daily Routes
+    // "View route" writing openFilters: true into sessionStorage).
+    const navigation = performance.getEntriesByType("navigation")[0] as
+      | PerformanceNavigationTiming
+      | undefined;
+    if (navigation?.type === "reload") return;
+
+    setFilters(
+      routeMode
+        ? {
+            ...context.filters,
+            rows: context.filters.rows.filter(
+              (row) => row.field !== PREDEFINED_ROUTE_FILTER_FIELD,
+            ),
+          }
+        : context.filters,
+    );
     setPage(1);
     if (context.openFilters) {
       setFiltersOpen(true);
     }
-  }, [listActive, setPage, tabScope?.tabId]);
+  }, [listActive, routeMode, setPage, tabScope?.tabId]);
 
   const selectedOrders = useMemo(
     () => orders.filter((order) => selectedIds.includes(getOrderRecordId(order))),
@@ -776,40 +843,41 @@ export function OrdersWorkspace({ routeMode = false, routeEmployee }: { routeMod
       return;
     }
 
+    const mapFilters = scopedRouteId
+      ? {
+          query: filters.query,
+          rows: [
+            ...filters.rows.filter((row) => row.field !== "route.id"),
+            ...buildPickupRouteFilterRows(scopedRouteId),
+          ],
+        }
+      : filters;
+
     writeOrdersMapContext({
       routeEmployee,
       routeScopeKey: routeAccess.scopeKey,
-      filters,
+      filters: mapFilters,
       sort,
       selectedIds: mappableSelected.map((order) => getOrderRecordId(order)),
       stopOrder: null,
-      dailyRouteId: null,
+      dailyRouteId: scopedRouteId,
     });
     openTab(routeMode ? "/route-appointments/map" : "/appointments/map", t("orders.map.title"));
   }
 
-  /** Opens the map with manual stop ordering (and optimize) for one scheduled route. */
+  /**
+   * Opens the map with manual stop ordering (and optimize) for one scheduled route.
+   * Prefers an active daily-route / supervisor scope so users do not have to
+   * select every stop when the list is already limited to a single route.
+   */
   async function openReorderViaMap() {
     if (!routeMode || isOpeningReorderMap) return;
 
-    const targets = selectedOrdersWithRoute;
-    const routeIds = new Set(targets.map((entry) => entry.routeId!.trim()));
-    if (routeIds.size === 0) {
-      notifyError(
-        selectedCount === 0
-          ? t("orders.actions.selectToReorder")
-          : t("orders.actions.noAssignedRoute"),
-      );
-      return;
-    }
-    if (routeIds.size > 1) {
-      notifyError(t("orders.actions.reorderViaMapMultiple"));
-      return;
-    }
-
-    const dailyRouteId = [...routeIds][0];
     setIsOpeningReorderMap(true);
     try {
+      const dailyRouteId = await resolveDailyRouteIdForReorder();
+      if (!dailyRouteId) return;
+
       const pickups = await fetchAllPickupsByRoutes([dailyRouteId]);
       if (pickups.length === 0) {
         notifyError(t("orders.actions.noPickupsOnRoute"));
@@ -835,6 +903,50 @@ export function OrdersWorkspace({ routeMode = false, routeEmployee }: { routeMod
     } finally {
       setIsOpeningReorderMap(false);
     }
+  }
+
+  /** Resolve which daily route Optimize / Reorder manually should open. */
+  async function resolveDailyRouteIdForReorder(): Promise<string | null> {
+    const scopedId = scopedRouteId?.trim();
+    if (scopedId) return scopedId;
+
+    const selectedRouteIds = [
+      ...new Set(
+        selectedOrdersWithRoute
+          .map((entry) => entry.routeId?.trim())
+          .filter((id): id is string => Boolean(id)),
+      ),
+    ];
+    if (selectedRouteIds.length > 1) {
+      notifyError(t("orders.actions.reorderViaMapMultiple"));
+      return null;
+    }
+    if (selectedRouteIds.length === 1) return selectedRouteIds[0];
+
+    const supervisorId =
+      typeof routeEmployee === "string" &&
+      routeEmployee.trim() &&
+      routeEmployee !== "me"
+        ? routeEmployee.trim()
+        : "";
+
+    if (!supervisorId) {
+      notifyError(
+        selectedCount === 0
+          ? t("orders.actions.selectToReorder")
+          : t("orders.actions.noAssignedRoute"),
+      );
+      return null;
+    }
+
+    const resolved = await fetchUniqueAssignedRouteIdForEmployee(supervisorId);
+    if ("routeId" in resolved) return resolved.routeId;
+    if (resolved.conflict === "multiple") {
+      notifyError(t("orders.actions.reorderViaMapMultiple"));
+      return null;
+    }
+    notifyError(t("orders.actions.noPickupsOnRoute"));
+    return null;
   }
 
   function viewSelectedRoute(order?: Order) {
@@ -969,8 +1081,11 @@ export function OrdersWorkspace({ routeMode = false, routeEmployee }: { routeMod
     () => [
     ...(routeMode ? [{
       id: "orderNumber",
+      // Keep stop order immediately after the checkbox when prefs were saved without this column.
+      defaultBefore: "id",
       label: t("orders.map.legend.stopOrder"),
       sortField: "orderNumber",
+      defaultWidth: 72,
       renderCell: (order: Order) => order.orderNumber || "—",
     }] : []),
     {
@@ -1151,10 +1266,26 @@ export function OrdersWorkspace({ routeMode = false, routeEmployee }: { routeMod
     [pickupRouteLookup, routeMode, t],
   );
 
+  // Route appointments keeps its own prefs so Order stays first after checkboxes by default.
   // Bump storage key so prior 520px-capped widths are not reused after compact fit.
-  const columnVisibility = useApiTableColumns("orders-v12-compact-fit", tableColumns, ORDER_API_TABLE_FIELDS);
-  const activeFilterCount = countCompleteFilterRows(filters.rows, ORDER_TABLE_FILTER_FIELDS);
-  const hasActiveFilters = Boolean(filters.query.trim()) || activeFilterCount > 0;
+  const columnVisibility = useApiTableColumns(
+    routeMode ? "route-orders-v1-compact-fit" : "orders-v12-compact-fit",
+    tableColumns,
+    ORDER_API_TABLE_FIELDS,
+  );
+  const advancedActiveFilterCount = countCompleteFilterRows(
+    listFilterRows,
+    ORDER_TABLE_FILTER_FIELDS,
+  );
+  const activeFilterCount = advancedActiveFilterCount + (hasRouteScopeFilter ? 1 : 0);
+  const hasActiveFilters =
+    Boolean(filters.query.trim()) || advancedActiveFilterCount > 0 || hasRouteScopeFilter;
+
+  function clearAllFilters() {
+    setFilters(defaultFilters);
+    setPage(1);
+    onClearRouteScopeFilter?.();
+  }
   const isSearchPending = filters.query.trim() !== debouncedQuery.trim();
   const isListFiltered = hasActiveFilters;
   const listSummary = formatPaginatedListSummary(
@@ -1259,7 +1390,7 @@ export function OrdersWorkspace({ routeMode = false, routeEmployee }: { routeMod
 
   return (
     <>
-    <PredefinedRouteDialog state={predefinedRouteCreate} />
+    {routeMode ? null : <PredefinedRouteDialog state={predefinedRouteCreate} />}
     <div className="overflow-x-hidden">
       <section className="max-w-full space-y-5 overflow-x-hidden md:hidden">
         <div>
@@ -1349,22 +1480,20 @@ export function OrdersWorkspace({ routeMode = false, routeEmployee }: { routeMod
               <TableFilterPanel isLoading={isFetching || isSearchPending}
                 resultSummary={listSummary}
                 presets={{
-                  storageKey: "orders-mobile",
-                  rows: filters.rows,
-                  fields: orderFilterFields,
+                  storageKey: routeMode ? "route-appointments-mobile" : "orders-mobile",
+                  rows: listFilterRows,
+                  fields: advancedFilterFields,
                   onApply: (rows) => {
-                    setFilters((current) => ({ ...current, rows }));
+                    setFilters((current) => ({
+                      ...current,
+                      rows: routeMode
+                        ? rows.filter((row) => row.field !== PREDEFINED_ROUTE_FILTER_FIELD)
+                        : rows,
+                    }));
                     setPage(1);
                   },
                 }}
-                onClearAll={
-                  hasActiveFilters
-                    ? () => {
-                        setFilters(defaultFilters);
-                        setPage(1);
-                      }
-                    : undefined
-                }
+                onClearAll={hasActiveFilters ? clearAllFilters : undefined}
               >
                 <TableAdvancedFilterBuilder
                   open={filtersOpen}
@@ -1380,6 +1509,7 @@ export function OrdersWorkspace({ routeMode = false, routeEmployee }: { routeMod
                   onChange={changeAdvancedRows}
                 />
                 {predefinedRouteRow}
+                {routeScopeFilter}
               </TableFilterPanel>
             </div>
           ) : null}
@@ -1565,22 +1695,20 @@ export function OrdersWorkspace({ routeMode = false, routeEmployee }: { routeMod
               <TableFilterPanel isLoading={isFetching || isSearchPending}
                 resultSummary={listSummary}
                 presets={{
-                  storageKey: "orders",
-                  rows: filters.rows,
-                  fields: orderFilterFields,
+                  storageKey: routeMode ? "route-appointments" : "orders",
+                  rows: listFilterRows,
+                  fields: advancedFilterFields,
                   onApply: (rows) => {
-                    setFilters((current) => ({ ...current, rows }));
+                    setFilters((current) => ({
+                      ...current,
+                      rows: routeMode
+                        ? rows.filter((row) => row.field !== PREDEFINED_ROUTE_FILTER_FIELD)
+                        : rows,
+                    }));
                     setPage(1);
                   },
                 }}
-                onClearAll={
-                  hasActiveFilters
-                    ? () => {
-                        setFilters(defaultFilters);
-                        setPage(1);
-                      }
-                    : undefined
-                }
+                onClearAll={hasActiveFilters ? clearAllFilters : undefined}
               >
                 <TableAdvancedFilterBuilder
                   open={filtersOpen}
@@ -1596,6 +1724,7 @@ export function OrdersWorkspace({ routeMode = false, routeEmployee }: { routeMod
                   onChange={changeAdvancedRows}
                 />
                 {predefinedRouteRow}
+                {routeScopeFilter}
               </TableFilterPanel>
             }
           />

@@ -23,7 +23,7 @@ import { useTranslation } from "@/lib/i18n";
 
 export function OrdersMapWorkspace({ routeMode = false }: { routeMode?: boolean } = {}) {
   const { scopeKey, canViewAll } = useRouteAppointmentsAccess();
-  const [routeEmployee, setRouteEmployee] = useState("me");
+  const [routeEmployee, setRouteEmployee] = useState<string | null>("me");
   const viewportRef = useFormViewport();
   const { t } = useTranslation();
   const { notifySuccess, notifyError } = useFeedback();
@@ -40,7 +40,13 @@ export function OrdersMapWorkspace({ routeMode = false }: { routeMode?: boolean 
     if (!mapActive) return;
 
     const context = readOrdersMapContext() ?? DEFAULT_ORDERS_MAP_CONTEXT;
-    setRouteEmployee(canViewAll && context.routeScopeKey === scopeKey ? context.routeEmployee || "me" : "me");
+    if (canViewAll && context.routeScopeKey === scopeKey) {
+      setRouteEmployee(
+        context.routeEmployee === null ? null : context.routeEmployee || "me",
+      );
+    } else {
+      setRouteEmployee("me");
+    }
     setFilters(context.filters);
     setSort(context.sort);
     setSelectedIds(context.selectedIds);

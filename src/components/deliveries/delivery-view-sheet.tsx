@@ -162,16 +162,6 @@ export function DeliveryViewSheet({
           <RecordViewSheetActions
             leading={
               <>
-                <TableSelectionActionsMenu hidden={!canDeliver}>
-                  <TableSelectionActionItem
-                    disabled={actionDisabled}
-                    onSelect={() => onDeliver(row)}
-                    className={tableSelectionActionMenuStyles.deliver}
-                  >
-                    <PackageCheck className="size-4" />
-                    {t("deliveries.deliver.action")}
-                  </TableSelectionActionItem>
-                </TableSelectionActionsMenu>
                 {canPrint ? (
                   <Button
                     type="button"
@@ -185,6 +175,16 @@ export function DeliveryViewSheet({
                     {t("invoices.printSignatures.action")}
                   </Button>
                 ) : null}
+                <TableSelectionActionsMenu hidden={!canDeliver}>
+                  <TableSelectionActionItem
+                    disabled={actionDisabled}
+                    onSelect={() => onDeliver(row)}
+                    className={tableSelectionActionMenuStyles.deliver}
+                  >
+                    <PackageCheck className="size-4" />
+                    {t("deliveries.deliver.action")}
+                  </TableSelectionActionItem>
+                </TableSelectionActionsMenu>
               </>
             }
           >

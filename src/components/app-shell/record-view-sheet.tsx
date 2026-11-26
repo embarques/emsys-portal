@@ -90,7 +90,7 @@ function isPlaceholderValue(value: React.ReactNode): boolean {
 type RecordViewSheetActionsProps = {
   onEdit?: () => void;
   onDelete?: () => void;
-  /** Extra controls rendered before Edit/Delete (e.g. Actions menu + Print). */
+  /** Extra controls rendered before Edit/Delete (e.g. Print, then Actions menu). */
   leading?: React.ReactNode;
   /** Optional content below the action buttons (e.g. delivery notices). */
   children?: React.ReactNode;

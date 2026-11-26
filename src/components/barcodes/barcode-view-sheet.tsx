@@ -228,6 +228,19 @@ export function BarcodeViewSheet({
             onDelete={canDelete && onDelete ? () => onDelete(barcode) : undefined}
             leading={
               <>
+                {showPrint ? (
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    className={cn("whitespace-nowrap", tableSelectionActionStyles.print)}
+                    disabled={actionsDisabled || printDisabled || isPrinting}
+                    onClick={() => onPrint?.(barcode)}
+                  >
+                    <Printer className="size-4" />
+                    {t(isPrinting ? "barcodes.print.preparing" : "barcodes.print.action")}
+                  </Button>
+                ) : null}
                 <TableSelectionActionsMenu
                   hidden={!showSecondaryActionsMenu}
                   disabled={actionsDisabled}
@@ -296,19 +309,6 @@ export function BarcodeViewSheet({
                     </TableSelectionActionItem>
                   ) : null}
                 </TableSelectionActionsMenu>
-                {showPrint ? (
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    className={cn("whitespace-nowrap", tableSelectionActionStyles.print)}
-                    disabled={actionsDisabled || printDisabled || isPrinting}
-                    onClick={() => onPrint?.(barcode)}
-                  >
-                    <Printer className="size-4" />
-                    {t(isPrinting ? "barcodes.print.preparing" : "barcodes.print.action")}
-                  </Button>
-                ) : null}
               </>
             }
           />

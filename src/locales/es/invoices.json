@@ -264,8 +264,9 @@
       "searchPaymentLocations": "Buscar sucursales…",
       "selectWarehouseEmployee": "Seleccionar empleado de almacén",
       "selectOfficeEmployee": "Seleccionar empleado de oficina",
-      "selectSupervisor": "Seleccionar supervisor",
-      "searchEmployees": "Buscar empleados…"
+      "selectSupervisor": "Seleccionar un empleado…",
+      "searchEmployees": "Buscar empleados…",
+      "noEmployeesFound": "No se encontraron empleados."
     },
     "partyActions": {
       "new": "Nuevo",

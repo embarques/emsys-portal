@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import { PackageCheck, Printer } from "lucide-react";
 
 import {
@@ -48,10 +48,44 @@ function rowKey(row: AssignedDeliveryBarcode) {
 
 export function DeliveriesWorkspace() {
   const access = useDeliveryAccess();
-  return <RouteWorklist canViewOthers={access.canList && access.viewScope === "all"} key={`${access.companyId}:${access.actorId}:${access.viewScope}:${access.canDeliver}:${access.canPrint}`}>{(employee) => <RouteDeliveriesTable access={access} routeEmployee={employee} />}</RouteWorklist>;
+  return (
+    <RouteWorklist
+      canViewOthers={access.canList && access.viewScope === "all"}
+      routeType="delivery"
+      key={`${access.companyId}:${access.actorId}:${access.viewScope}:${access.canDeliver}:${access.canPrint}`}
+    >
+      {(work) => (
+        <RouteDeliveriesTable
+          access={access}
+          routeEmployee={work.routeEmployee}
+          scopedRouteId={work.scopedRouteId}
+          scopeKey={work.scopeKey}
+          scopeFilter={work.scopeFilter}
+          hasScopeFilter={work.hasScopeFilter}
+          clearScopeFilter={work.clearScopeFilter}
+        />
+      )}
+    </RouteWorklist>
+  );
 }
 
-function RouteDeliveriesTable({ access, routeEmployee }: { routeEmployee: string; access: ReturnType<typeof useDeliveryAccess> }) {
+function RouteDeliveriesTable({
+  access,
+  routeEmployee,
+  scopedRouteId,
+  scopeKey,
+  scopeFilter,
+  hasScopeFilter,
+  clearScopeFilter,
+}: {
+  routeEmployee: string | null;
+  scopedRouteId: string | null;
+  scopeKey: string;
+  access: ReturnType<typeof useDeliveryAccess>;
+  scopeFilter: ReactNode;
+  hasScopeFilter: boolean;
+  clearScopeFilter: () => void;
+}) {
   const { t } = useTranslation();
   const dash = t("common.empty.dash");
   const [printRow, setPrintRow] = useState<AssignedDeliveryBarcode | null>(null);
@@ -65,8 +99,14 @@ function RouteDeliveriesTable({ access, routeEmployee }: { routeEmployee: string
     keyPrefix: "deliveries.filters.fields",
     defaultSort: DEFAULT_ASSIGNED_DELIVERY_SORT,
     getRowId: rowKey,
-    queryKey: (params) => [...queryKeys.deliveries.assignedPage(access.companyId, access.actorId, params), access.viewScope, routeEmployee],
-    fetchPage: (params, signal) => fetchAssignedDeliveryBarcodesPage(params, signal, routeEmployee),
+    selectionResetKey: scopeKey,
+    queryKey: (params) => [
+      ...queryKeys.deliveries.assignedPage(access.companyId, access.actorId, params),
+      access.viewScope,
+      scopeKey,
+    ],
+    fetchPage: (params, signal) =>
+      fetchAssignedDeliveryBarcodesPage(params, signal, { routeEmployee, scopedRouteId }),
   });
   const { sort } = table;
   const { selectedIds, selectedRows } = table.selection;
@@ -188,6 +228,9 @@ function RouteDeliveriesTable({ access, routeEmployee }: { routeEmployee: string
             presetScope="deliveries"
             searchPlaceholder={t("deliveries.searchPlaceholder")}
             columnLayout={columnLayout}
+            filterExtras={scopeFilter}
+            extraActiveFilterCount={hasScopeFilter ? 1 : 0}
+            onExtraClear={clearScopeFilter}
           />
         </CardHeader>
 

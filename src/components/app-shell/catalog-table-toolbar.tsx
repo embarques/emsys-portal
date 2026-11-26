@@ -19,18 +19,34 @@ type CatalogTableToolbarProps<T> = {
   presetScope: string;
   searchPlaceholder: string;
   columnLayout?: TableColumnLayout;
+  /** Extra filter controls rendered below the advanced filter builder. */
+  filterExtras?: ReactNode;
+  /** Active filters outside advanced rows (e.g. route employee scope). */
+  extraActiveFilterCount?: number;
+  /** Cleared together with advanced filters / search when Clear all is used. */
+  onExtraClear?: () => void;
 };
 
 /** Search + filter toolbar for server-filtered catalog tables. */
-export function CatalogTableToolbar<T>({ state, presetScope, searchPlaceholder, columnLayout }: CatalogTableToolbarProps<T>) {
+export function CatalogTableToolbar<T>({
+  state,
+  presetScope,
+  searchPlaceholder,
+  columnLayout,
+  filterExtras,
+  extraActiveFilterCount = 0,
+  onExtraClear,
+}: CatalogTableToolbarProps<T>) {
   const { t } = useTranslation();
+  const activeFilterCount = state.activeFilterCount + extraActiveFilterCount;
+  const hasClearableFilters = state.hasActiveFilters || extraActiveFilterCount > 0;
   const summary = state.hasActiveFilters ? t("common.table.matchCount", { count: state.total }) : undefined;
 
   return (
     <TableDirectoryToolbar
       filtersOpen={state.open}
       onFiltersOpenChange={state.setOpen}
-      activeFilterCount={state.activeFilterCount}
+      activeFilterCount={activeFilterCount}
       columnLayout={columnLayout}
       filterPanel={
         <TableAdvancedFilterPanel
@@ -41,8 +57,17 @@ export function CatalogTableToolbar<T>({ state, presetScope, searchPlaceholder, 
           fields={state.fields}
           resultSummary={summary}
           onRowsChange={state.setRows}
-          onClearAll={state.hasActiveFilters ? state.clear : undefined}
-        />
+          onClearAll={
+            hasClearableFilters
+              ? () => {
+                  state.clear();
+                  onExtraClear?.();
+                }
+              : undefined
+          }
+        >
+          {filterExtras}
+        </TableAdvancedFilterPanel>
       }
       search={<TableSearchInput value={state.query} onChange={state.setQuery} placeholder={searchPlaceholder} />}
     />

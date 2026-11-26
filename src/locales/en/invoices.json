@@ -264,8 +264,9 @@
       "searchPaymentLocations": "Search branches…",
       "selectWarehouseEmployee": "Select warehouse employee",
       "selectOfficeEmployee": "Select office employee",
-      "selectSupervisor": "Select supervisor",
-      "searchEmployees": "Search employees…"
+      "selectSupervisor": "Select an employee…",
+      "searchEmployees": "Search employees…",
+      "noEmployeesFound": "No employees found."
     },
     "partyActions": {
       "new": "New",

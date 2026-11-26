@@ -1,5 +1,7 @@
 "use client";
 
+import type { ReactNode } from "react";
+
 import { TableAdvancedFilterBuilder } from "@/components/app-shell/table-advanced-filter-builder";
 import { TableFilterPanel } from "@/components/app-shell/table-directory-toolbar";
 import type {
@@ -19,6 +21,8 @@ type TableAdvancedFilterPanelProps = {
   resultSummary?: string;
   onRowsChange: (rows: TableFilterRowState[]) => void;
   onClearAll?: () => void;
+  /** Extra controls rendered below the advanced filter builder (e.g. route employee). */
+  children?: ReactNode;
 };
 
 /** Standard directory filter dropdown body: presets, clear-all, and the row builder. */
@@ -32,6 +36,7 @@ export function TableAdvancedFilterPanel({
   resultSummary,
   onRowsChange,
   onClearAll,
+  children,
 }: TableAdvancedFilterPanelProps) {
   return (
     <TableFilterPanel
@@ -47,6 +52,7 @@ export function TableAdvancedFilterPanel({
         dynamicOptions={dynamicOptions}
         onChange={onRowsChange}
       />
+      {children}
     </TableFilterPanel>
   );
 }

@@ -136,7 +136,8 @@ type MarkerBinding = {
 };
 
 export type OrdersMapViewProps = {
-  routeEmployee?: string;
+  /** `null` omits the API param (daily-route broad scope). */
+  routeEmployee?: string | null;
   allowRouteManagement?: boolean;
   active: boolean;
   filters: OrderFilterState;

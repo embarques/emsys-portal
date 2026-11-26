@@ -254,7 +254,13 @@ export type OrderListParams = {
   filterRows?: TableFilterRowState[];
   /** Route Appointments: only pickups on a scheduled route; the search bar covers every text column. */
   assignedRouteOnly?: boolean;
-  routeEmployee?: string;
+  /**
+   * Route work employee scope (`me` or an employee id).
+   * Pass `null` to omit the query param (daily-route filter with broad view).
+   */
+  routeEmployee?: string | null;
+  /** Route Appointments scope filter: only pickups on this daily vehicle-route id. */
+  scopedRouteId?: string | null;
 };
 
 /** Optional sort for pickups list/search when explicitly requested. */

@@ -36,10 +36,23 @@ type UseCatalogTableOptions<T> = {
     option: TableFilterFieldOption,
     t: (key: string) => string,
   ) => TableFilterFieldOption;
+  /** Extra selection-reset key parts (e.g. route work scope). */
+  selectionResetKey?: string;
 };
 
 /** Search box, advanced filters, header sort and pagination for a small catalog, all applied by the API. */
-export function useCatalogTable<T>({ fields, keyPrefix, defaultSort, getRowId, queryKey, fetchPage, localizeOption, enabled = true, keepPrevious = true }: UseCatalogTableOptions<T>) {
+export function useCatalogTable<T>({
+  fields,
+  keyPrefix,
+  defaultSort,
+  getRowId,
+  queryKey,
+  fetchPage,
+  localizeOption,
+  enabled = true,
+  keepPrevious = true,
+  selectionResetKey = "",
+}: UseCatalogTableOptions<T>) {
   const [query, setQueryState] = useState("");
   const [rows, setRowsState] = useState<TableFilterRowState[]>([]);
   const [open, setOpen] = useState(false);
@@ -72,7 +85,11 @@ export function useCatalogTable<T>({ fields, keyPrefix, defaultSort, getRowId, q
   rememberTotal(total);
   const totalPages = Math.max(1, Math.ceil(total / pageLimit));
   const items = useMemo(() => pageQuery.data?.items ?? [], [pageQuery.data?.items]);
-  const selection = useTableRowSelection(items, getRowId, buildTableSelectionResetKey(debouncedQuery, rows));
+  const selection = useTableRowSelection(
+    items,
+    getRowId,
+    buildTableSelectionResetKey(debouncedQuery, rows, selectionResetKey),
+  );
 
   const onSortChange = useCallback(
     (field: string, direction: SortDirection) => {
