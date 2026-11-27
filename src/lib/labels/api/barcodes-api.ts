@@ -84,6 +84,8 @@ type ApiMutationEnvelope<T = unknown> = PaginatedApiEnvelope<T> & {
 };
 
 /** Payload accepted by `POST /barcodes` and `PUT /barcodes/{id}`. */
+export type BarcodeLogisticsPayload = Omit<BarcodeWritePayload, "status"> & { status?: BarcodeWritePayload["status"] };
+
 export type BarcodeWritePayload = {
   number: string;
   status: { id: number; name: string };
@@ -128,7 +130,7 @@ export type BarcodeUpdate = {
    */
   barcodeId?: string;
   invoiceId?: string;
-  payload: BarcodeWritePayload;
+  payload: BarcodeLogisticsPayload;
   /** When set, skips target resolution and uses the matching write path. */
   writeTarget?: "barcodes" | "invoice-embedded";
 };
@@ -292,7 +294,7 @@ export async function createBarcode(payload: BarcodeWritePayload): Promise<Barco
   };
 }
 
-export async function updateBarcode(id: number, payload: BarcodeWritePayload, existing?: Barcode): Promise<Barcode> {
+export async function updateBarcode(id: number, payload: BarcodeLogisticsPayload, existing?: Barcode): Promise<Barcode> {
   if (payload.route !== undefined) {
     const saved = existing ?? await fetchBarcodeById(id);
     assertBarcodeRouteChangeAllowed(saved.status, saved.route, payload.route);
@@ -307,8 +309,8 @@ export async function updateBarcode(id: number, payload: BarcodeWritePayload, ex
     normalizeBarcode(response.data) ?? {
       id,
       number: payload.number,
-      status: payload.status,
-      container: payload.container ?? null,
+      status: payload.status ?? existing?.status ?? null,
+      container: payload.container ?? existing?.container ?? null,
       route: null,
       delivery: null,
     }
@@ -351,7 +353,7 @@ async function resolveBarcodeWriteTarget(
 
 type ResolvedBarcodeUpdate = {
   invoiceId?: string;
-  payload: BarcodeWritePayload;
+  payload: BarcodeLogisticsPayload;
   target: BarcodeWriteTarget;
 };
 
@@ -412,74 +414,43 @@ async function resolveBarcodeUpdates(updates: BarcodeUpdate[]): Promise<Resolved
   );
 }
 
-function toEmbeddedPatch(target: Extract<BarcodeWriteTarget, { kind: "invoice-embedded" }>, payload: BarcodeWritePayload) {
-  return {
-    barcodeId: target.id,
-    number: payload.number,
-    status: payload.status,
-    container: payload.container,
-    ...(payload.route !== undefined ? { route: payload.route } : {}),
-  };
+export async function updateInvoiceBarcode(
+  invoiceId: string,
+  barcodeId: string | undefined,
+  payload: BarcodeLogisticsPayload,
+): Promise<Barcode> {
+  const identity = barcodeId?.trim();
+  const response = await apiClient.put<ApiMutationEnvelope<unknown>>(
+    `${API_ENDPOINTS.EMBEDDED_BARCODES}/${encodeURIComponent(invoiceId)}`,
+    { ...payload, ...(/^[a-f0-9]{24}$/i.test(identity ?? "") ? { barcodeId: identity } : {}) },
+  );
+  assertMutationSuccess(response, translateCurrent("labels.errors.updateFailed"));
+  const updated = normalizeBarcode(response.data);
+  if (!updated) throw new Error(translateCurrent("labels.errors.updateFailed"));
+  return updated;
 }
 
 export async function updateBarcodes(updates: BarcodeUpdate[]): Promise<Barcode[]> {
-  const resolvedUpdates = await resolveBarcodeUpdates(updates);
-  const catalogUpdates = resolvedUpdates.filter((update) => update.target.kind === "barcodes");
-  const embeddedUpdates = resolvedUpdates.filter((update) => update.target.kind === "invoice-embedded");
-
-  const catalogById = new Map<number, Barcode>();
-  const catalogSettled = await runSettledWithConcurrency(catalogUpdates, {
-    getId: (update) => (update.target.kind === "barcodes" ? update.target.id : 0),
+  const resolved = await resolveBarcodeUpdates(updates);
+  const results = new Map<ResolvedBarcodeUpdate, Barcode>();
+  const settled = await runSettledWithConcurrency(resolved, {
+    concurrency: 1,
+    getId: (update) => update,
     run: async (update) => {
-      if (update.target.kind !== "barcodes") {
-        throw new Error("Expected barcodes catalog write target.");
+      const { target, invoiceId, payload } = update;
+      if (target.kind === "invoice-embedded" && !invoiceId?.trim()) {
+        throw new Error("Invoice id is required to update embedded barcodes.");
       }
-      const barcode = await updateBarcode(update.target.id, update.payload);
-      catalogById.set(update.target.id, barcode);
+      const saved = target.kind === "barcodes"
+        ? await updateBarcode(target.id, payload)
+        : await updateInvoiceBarcode(invoiceId!, target.id, payload);
+      results.set(update, saved);
     },
   });
-
-  if (catalogSettled.failedIds.length > 0 && catalogSettled.succeededIds.length === 0) {
-    throw new Error(catalogSettled.firstErrorMessage ?? translateCurrent("labels.errors.bulkUpdateFailed"));
+  if (settled.failedIds.length && !settled.succeededIds.length) {
+    throw new Error(settled.firstErrorMessage ?? translateCurrent("labels.errors.bulkUpdateFailed"));
   }
-
-  const catalogResults = catalogSettled.succeededIds
-    .map((id) => catalogById.get(id))
-    .filter((barcode): barcode is Barcode => Boolean(barcode));
-
-  const embeddedByInvoice = new Map<string, ReturnType<typeof toEmbeddedPatch>[]>();
-  for (const update of embeddedUpdates) {
-    const invoiceId = update.invoiceId?.trim();
-    if (!invoiceId) {
-      throw new Error("Invoice id is required to update embedded barcodes.");
-    }
-    if (update.target.kind !== "invoice-embedded") {
-      throw new Error("Expected invoice-embedded write target.");
-    }
-
-    const patches = embeddedByInvoice.get(invoiceId) ?? [];
-    patches.push(toEmbeddedPatch(update.target, update.payload));
-    embeddedByInvoice.set(invoiceId, patches);
-  }
-
-  const embeddedResults: Barcode[] = [];
-  for (const [invoiceId, patches] of embeddedByInvoice) {
-    await patchInvoiceEmbeddedBarcodes(invoiceId, patches);
-    for (const patch of patches) {
-      const legacyNumericId = readNumericId(patch.barcodeId);
-      embeddedResults.push({
-        id: legacyNumericId ?? 0,
-        barcodeId: patch.barcodeId,
-        number: patch.number,
-        status: patch.status,
-        container: patch.container ?? null,
-        route: null,
-        delivery: null,
-      });
-    }
-  }
-
-  return [...catalogResults, ...embeddedResults];
+  return Array.from(results.values());
 }
 
 export async function fetchBarcodeByNumber(number: string): Promise<Barcode> {

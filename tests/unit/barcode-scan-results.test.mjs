@@ -45,19 +45,20 @@ const embedded = number => ({
 });
 const noCatalog = { fetchBarcodeByNumber: async () => { throw new Error("Not found"); } };
 
-test("rejected invoice updates produce a failed change row without claiming applied fields", async () => {
+test("rejected invoice updates produce a failed change row with previous values and no applied fields", async () => {
   const api = loadScanner({
     findInvoiceBarcodeByNumber: async number => embedded(number),
-    patchInvoiceEmbeddedBarcodes: async () => { throw new Error("VERSION_REQUIRED"); },
-  }, noCatalog);
+  }, { ...noCatalog, updateInvoiceBarcode: async () => { throw new Error("Barcode write rejected"); } });
   const row = await api.applyBarcodeScanUpdate(" LABEL-1 ", options, "Scanner user", translate);
   assert.equal(row.success, false);
   assert.equal(row.barcode, "LABEL-1");
-  assert.match(row.message, /VERSION_REQUIRED/);
+  assert.match(row.message, /Barcode write rejected/);
+  assert.equal(row.invoiceNumber, "INV-1");
+  assert.equal(row.previousStatus, "ALM-NY");
   assert.equal(row.createdBy, "Scanner user");
   assert.ok(row.id);
   assert.ok(row.dateTime);
-  for (const field of ["previousStatus", "newStatus", "previousContainer", "newContainer", "previousRoute", "newRoute"]) {
+  for (const field of ["newStatus", "newContainer", "newRoute"]) {
     assert.equal(row[field], undefined);
   }
 });
@@ -69,8 +70,12 @@ test("bulk scan retains successful rows and continues after lookup and catalog w
       if (number === "lookup-fails") throw new Error("Lookup unavailable");
       return number === "catalog-fails" ? null : embedded(number);
     },
-    patchInvoiceEmbeddedBarcodes: async (_id, patches) => { writes.push(patches[0].number); },
   }, {
+    updateInvoiceBarcode: async (_id, _barcodeId, patch) => {
+      assert.deepEqual(Object.keys(patch).sort(), ["number", "status"]);
+      writes.push(patch.number);
+      return { ...patch, id: 0, container: null, route: null, delivery: null };
+    },
     fetchBarcodeByNumber: async number => ({ id: 1, number, status: { id: 1, name: "ALM-NY" }, container: null, route: null, delivery: null }),
     updateBarcode: async () => { throw new Error("Update rejected"); },
   });
@@ -95,8 +100,7 @@ test("scanner records rejected past-route and delivered-label assignments as fai
         }
         return record;
       },
-      patchInvoiceEmbeddedBarcodes: async () => { writes++; },
-    }, noCatalog);
+    }, { ...noCatalog, updateInvoiceBarcode: async () => { writes++; } });
     const row = await api.applyBarcodeScanUpdate("LABEL-1", {
       ...options, changeStatus: false, changeRoute: true, newRouteRecordId: "new-route",
       statusOptions: [...options.statusOptions, { id: 7, name: "ENTREGADO" }],

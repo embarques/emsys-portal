@@ -164,7 +164,7 @@ Invoice (line items + labels count)
 | **Barcode Scanner** | Operations: find a label by printed number and update location fields |
 | **Barcodes table** | Browse / filter / print / bulk status·container·route (no standalone create/delete) |
 
-Lookups and updates should prefer **invoice-embedded** barcodes when the number lives on an invoice. The `/barcodes` catalog may mirror or denormalize the same labels for directory search and reports; keep both stores in sync when the portal updates status, container, or route.
+Lookups and updates should prefer **invoice-embedded** barcodes when the number lives on an invoice. The `/barcodes` catalog may mirror or denormalize the same labels for directory search and reports; the barcode API keeps both stores in sync when the portal updates status, container, or route. Barcode Updater uses the invoice-scoped barcode endpoint for invoice-owned pieces. Barcodes can update its catalog rows through the standard barcode endpoint and its invoice-only pieces through the invoice-scoped endpoint.
 
 Barcode **route** is the **DR branch daily vehicle-route**, separate from invoice `receivedBy`. The barcode Route filter uses only **Equals** against `route.id`, with a dropdown of DR daily routes.
 
