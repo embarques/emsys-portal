@@ -21,6 +21,7 @@
   "severity": {
     "common": "Común",
     "uncommon": "Poco común",
+    "severe": "Grave",
     "rare": "Rara"
   },
   "empty": {

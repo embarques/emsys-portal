@@ -225,7 +225,7 @@ function InvoiceSummaryCard({
   const [detailsOpen, setDetailsOpen] = useState(true);
 
   const { lineRows, itemCount, subtotal, discount, amountPaid, balance } = useInvoiceTotals(values);
-  const invoiceLabel = values.autoGenerateNumber ? values.generatedInvoiceNumber || t("invoices.form.autoNumber.assignedOnSave") : values.invoiceNumber.trim() || t("invoices.wizard.summary.newInvoice");
+  const invoiceLabel = values.autoGenerateNumber ? values.generatedInvoiceNumber || t("invoices.form.autoNumber.onContinue") : values.invoiceNumber.trim() || t("invoices.wizard.summary.newInvoice");
   const hasRegisteredCost = registeredCost != null && Number.isFinite(registeredCost);
   const registeredCostMismatch =
     hasRegisteredCost && Math.round(Math.abs(subtotal - (registeredCost as number)) * 100) / 100 >= 0.01;

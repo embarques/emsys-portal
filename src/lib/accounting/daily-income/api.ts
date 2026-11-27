@@ -675,6 +675,7 @@ function journalPayload(statement: DailyIncomeStatement, values: DailyIncomeJour
           ...(values.autoGenerateInvoiceNumber
             ? { autoGenerateNumber: true }
             : { number: values.invoiceNumber?.trim() }),
+          ...(values.invoiceReservation ? { reservation: values.invoiceReservation } : {}),
           cost: values.invoiceCost,
           discount: values.invoiceDiscount ?? 0,
           responsibility: values.invoiceResponsibility ?? {},

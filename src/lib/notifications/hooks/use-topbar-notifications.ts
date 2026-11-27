@@ -2,7 +2,6 @@
 
 import { useMemo } from "react";
 
-import { createApiListTextSearch } from "@/lib/api/search-query";
 import { useAuth } from "@/lib/auth/hooks/use-auth";
 import { PERMISSIONS } from "@/lib/auth/permissions";
 import { useComplaintNotifications } from "@/lib/complaints/hooks/use-complaints";
@@ -54,7 +53,10 @@ const RARE_ACTIVITY_PARAMS = {
   page: 1,
   limit: 20,
   sort: "timestamp:desc" as const,
-  search: createApiListTextSearch("rare", "severity", "eq"),
+  filterRows: [
+    { id: "rare", join: "and", field: "severity", operator: "eq", value: "rare" },
+    { id: "severe", join: "or", field: "severity", operator: "eq", value: "severe" },
+  ] satisfies import("@/lib/table/filter-builder").TableFilterRowState[],
 };
 
 export function useTopbarNotifications(options: { enabled?: boolean } = {}) {
@@ -76,7 +78,7 @@ export function useTopbarNotifications(options: { enabled?: boolean } = {}) {
     const next: NotificationItem[] = [];
 
     for (const activity of activitiesQuery.data?.items ?? []) {
-      if (activity.severity !== "rare") continue;
+      if (activity.severity !== "rare" && activity.severity !== "severe") continue;
       next.push({
         id: notificationActivityId(activity.activityId),
         kind: "rare-activity",

@@ -114,6 +114,35 @@ for (const generatedInvoiceNumber of [undefined, "INV-26-001423"]) {
  });
 }
 
+test("unpaid invoice and initial payment submit the held number and reservation proof", async () => {
+  const proof = { id: "507f1f77bcf86cd799439011", token: "assignment", deviceId: "draft" };
+  const number = "POOL-005";
+  const posts = [];
+  const captured = new Error("captured request");
+  const client = { post: async (_, body) => { posts.push(body); throw captured; } };
+  const { createEmptyInvoiceForm, createEmptyInvoiceLineItem } = loadFeature("src/lib/invoices/types.ts", {});
+  const { createInvoice } = loadFeature("src/lib/invoices/api/invoices-api.ts", client);
+  const { createDailyIncomeJournal } = loadFeature("src/lib/accounting/daily-income/api.ts", client);
+  const invoice = {
+    ...createEmptyInvoiceForm(), autoGenerateNumber: true, generatedInvoiceNumber: number,
+    invoiceNumber: number, reservation: proof, paymentLocation: "BRANCH:27", date: "2026-11-26", sender: { ...loadFeature("src/lib/customers/types.ts", {}).createEmptyCustomerForm(), id: "customer", name: "Sender" },
+    lineItems: [{ ...createEmptyInvoiceLineItem(), itemName: "Box", quantity: "1", unitPrice: "80", total: "80" }],
+  };
+  await assert.rejects(createInvoice(invoice, { branch: { id: 1, name: "NY", code: "NY" }, container: { id: 1, name: "Fixture" } }), err => err === captured);
+  await assert.rejects(createDailyIncomeJournal({ id: 1, date: invoice.date }, {
+    transactionType: "INITIAL-PAYMENT", invoiceNumber: number, invoiceReservation: proof,
+    invoiceCost: 80, amount: 0, employeeId: 1, refNumberMode: "system", description: "Registration",
+  }), err => err === captured);
+  assert.deepEqual(posts[0].paymentBranch, { id: 27 });
+  assert.equal(posts[0].paidRegion, undefined);
+  assert.equal(posts[1].invoice.paymentBranch, undefined);
+  for (const body of [posts[0], posts[1].invoice]) {
+    assert.equal(body.number, number);
+    assert.deepEqual(body.reservation, proof);
+    assert.equal(body.autoGenerateNumber, undefined);
+  }
+});
+
 test("wizard requires a manual number and accepts automatic allocation", () => {
  const {findInvoiceWizardStep1Issue}=loadFeature("src/lib/invoices/invoice-wizard-validation.ts",{});
  const {createEmptyInvoiceForm}=loadFeature("src/lib/invoices/types.ts",{});

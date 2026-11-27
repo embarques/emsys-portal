@@ -62,12 +62,11 @@ import { formatContainerIdLabel, formatContainerLabel } from "@/lib/containers/d
 import {
   formatInvoiceDate,
   formatInvoiceMoney,
-  getPaymentLocationLabel,
 } from "@/lib/invoices/display";
 import { INVOICE_WIZARD_FIELDS } from "@/lib/invoices/invoice-wizard-validation";
 import { getPrimaryPhoneDisplayNumber } from "@/lib/phones/phones";
 import { buildTransactionAssigneeOptions, resolveDailyRouteSupervisor } from "@/lib/accounting/daily-income/assignee";
-import { useBranchPicker } from "@/lib/branches/hooks/use-branches";
+import { useInvoicePaymentLocations } from "@/lib/invoices/hooks/use-invoice-payment-locations";
 import {
   useCreateEmployee,
   useEmployeeSearch,
@@ -320,8 +319,7 @@ export function InvoiceForm({
       draftValues.pickupSource === "route" && pickupRoutes.some((route) => route.id === draftValues.routeId)) return draftValues;
     return { ...draftValues, ...invoiceSelfResponsibility() };
   }, [draftValues, isEditing, responsibilityLocked, responsibility.ready, responsibility.canAssign, pickupRoutes]);
-  const { data: branchesData, isLoading: branchesLoading } = useBranchPicker();
-  const branches = useMemo(() => branchesData?.items ?? [], [branchesData?.items]);
+  const paymentLocations = useInvoicePaymentLocations(showPaymentLocation);
   const employeesQuery = useEmployees({
     ...DEFAULT_EMPLOYEE_LIST_PARAMS,
     limit: 200,
@@ -913,7 +911,8 @@ export function InvoiceForm({
         compact
         autoGenerate={Boolean(values.autoGenerateNumber)}
         invoiceNumber={values.invoiceNumber}
-        generatedInvoiceNumber={values.generatedInvoiceNumber}
+        generatedInvoiceNumber={initialValues?.generatedInvoiceNumber ?? values.generatedInvoiceNumber}
+        systemHint={isWizard ? t("invoices.form.autoNumber.onContinue") : undefined}
         canUseManualNumber={canUseManualNumber}
         onModeChange={(nextAutoGenerate) => {
           updateField("autoGenerateNumber", nextAutoGenerate);
@@ -965,48 +964,51 @@ export function InvoiceForm({
   ) : (
     <>
       {renderField(
-        t("invoices.form.fields.responsibleParty"),
+        t("invoices.form.fields.responsiblePartyTitle"),
         undefined,
         true,
-        <ChoiceTiles<"creator" | "supervisor" | "route">
-          id="invoice-pickup-source"
-          aria-label={t("invoices.form.fields.responsibleParty")}
-          className="sm:grid-cols-3"
-          value={responsibilityChoice}
-          onValueChange={updatePickupSource}
-          options={[
-            {
-              value: "creator" as const,
-              label: t("invoices.form.fields.pickupSourceCreator"),
-              description: t("invoices.form.hints.pickupSourceCreator"),
-              icon: UserCheck,
-              iconClassName: "text-emerald-700",
-              iconBackgroundClassName: "bg-emerald-50 dark:bg-muted",
-            },
-            {
-              value: "supervisor" as const,
-              label: t("invoices.form.fields.pickupSourceSupervisor"),
-              description: t("invoices.form.hints.pickupSourceSupervisor"),
-              icon: UserRound,
-              iconClassName: "text-blue-600",
-              iconBackgroundClassName: "bg-blue-50 dark:bg-muted",
-              disabled: !responsibility.canAssign,
-            },
-            {
-              value: "route" as const,
-              label: t("invoices.form.fields.pickupSourceRoute"),
-              description: t("invoices.form.hints.pickupSourceRoute"),
-              icon: Route,
-              iconClassName: "text-indigo-700",
-              iconBackgroundClassName: "bg-indigo-50 dark:bg-muted",
-              disabled: !canChooseRoute,
-            },
-          ].filter((option) =>
-            option.value === "creator" ||
-            option.value === "supervisor" && responsibility.canAssign ||
-            option.value === "route" && canChooseRoute,
-          )}
-        />,
+        <div className="space-y-2">
+          <p id="invoice-pickup-source-question" className="text-sm text-muted-foreground">{t("invoices.form.fields.responsibleParty")}</p>
+          <ChoiceTiles<"creator" | "supervisor" | "route">
+            id="invoice-pickup-source"
+            aria-labelledby="invoice-pickup-source-question"
+            className="sm:grid-cols-3"
+            value={responsibilityChoice}
+            onValueChange={updatePickupSource}
+            options={[
+              {
+                value: "creator" as const,
+                label: t("invoices.form.fields.pickupSourceCreator"),
+                description: t("invoices.form.hints.pickupSourceCreator"),
+                icon: UserCheck,
+                iconClassName: "text-emerald-700",
+                iconBackgroundClassName: "bg-emerald-50 dark:bg-muted",
+              },
+              {
+                value: "supervisor" as const,
+                label: t("invoices.form.fields.pickupSourceSupervisor"),
+                description: t("invoices.form.hints.pickupSourceSupervisor"),
+                icon: UserRound,
+                iconClassName: "text-blue-600",
+                iconBackgroundClassName: "bg-blue-50 dark:bg-muted",
+                disabled: !responsibility.canAssign,
+              },
+              {
+                value: "route" as const,
+                label: t("invoices.form.fields.pickupSourceRoute"),
+                description: t("invoices.form.hints.pickupSourceRoute"),
+                icon: Route,
+                iconClassName: "text-indigo-700",
+                iconBackgroundClassName: "bg-indigo-50 dark:bg-muted",
+                disabled: !canChooseRoute,
+              },
+            ].filter((option) =>
+              option.value === "creator" ||
+              option.value === "supervisor" && responsibility.canAssign ||
+              option.value === "route" && canChooseRoute,
+            )}
+          />
+        </div>,
       )}
       {showRoutePicker
         ? renderField(
@@ -1079,19 +1081,21 @@ export function InvoiceForm({
         true,
         <SearchableSelect
           id="paymentLocation"
-          value={mapPaymentLocationToPaidRegion(values.paymentLocation)}
-          onValueChange={(next) =>
-            updateField("paymentLocation", next as InvoiceFormValues["paymentLocation"])
-          }
+          value={paymentLocations.options.find((branch) =>
+            branch.value === values.paymentLocation || branch.code === mapPaymentLocationToPaidRegion(values.paymentLocation),
+          )?.value ?? values.paymentLocation}
+          onValueChange={(next) => commitValues((current) => ({
+            ...current,
+            paymentLocation: next,
+            paymentBranchName: paymentLocations.options.find((branch) => branch.value === next)?.label,
+          }))}
           placeholder={t("invoices.form.placeholders.selectPaymentLocation")}
           searchPlaceholder={t("invoices.form.placeholders.searchPaymentLocations")}
           {...(isWizard ? wizardSelectFieldProps(values.paymentLocation) : {})}
           required
-          loading={branchesLoading}
-          options={branches.filter((branch) => branch.code.trim()).map((branch) => ({
-            value: branch.code.trim().toUpperCase(),
-            label: branch.code.trim().toUpperCase(),
-          }))}
+          loading={paymentLocations.isLoading}
+          emptyMessage={paymentLocations.isError ? t("invoices.form.placeholders.paymentLocationsUnavailable") : undefined}
+          options={paymentLocations.options}
         />,
       )
     : null;
@@ -1099,6 +1103,7 @@ export function InvoiceForm({
   const detailsFields = (
     <div className="grid min-w-0 grid-cols-1 gap-4">
       {invoiceNumberField}
+      {responsibilityFields}
       <div
         className={cn(
           "grid min-w-0 gap-4",
@@ -1142,7 +1147,6 @@ export function InvoiceForm({
         )}
         {paymentLocationField}
       </div>
-      {responsibilityFields}
     </div>
   );
 
@@ -1154,11 +1158,7 @@ export function InvoiceForm({
     <div className="min-w-0 space-y-3">
       <p className="text-sm text-muted-foreground">{t("invoices.assigned.detailsHint")}</p>
       <div className="grid min-w-0 grid-cols-1 gap-3">
-        <ReadOnlyField label={t("invoices.form.fields.invoiceNumber")}>
-          {values.autoGenerateNumber
-            ? t("invoices.form.autoNumber.assignedOnSave")
-            : values.invoiceNumber.trim() || dash}
-        </ReadOnlyField>
+        {invoiceNumberField}
         <div
           className={cn(
             "grid min-w-0 gap-3",
@@ -1175,11 +1175,7 @@ export function InvoiceForm({
                 ? formatContainerIdLabel(values.containerId)
                 : dash}
           </ReadOnlyField>
-          {showPaymentLocation ? (
-            <ReadOnlyField label={t("invoices.form.fields.paymentLocation")}>
-              {getPaymentLocationLabel(values.paymentLocation) || dash}
-            </ReadOnlyField>
-          ) : null}
+          {paymentLocationField}
         </div>
         {responsibilityFields}
       </div>

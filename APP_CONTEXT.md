@@ -130,7 +130,11 @@ Legacy `driver` identifies the pickup supervisor. Older clients can still supply
 
 The invoice detail shows Payment Status and the posted Outstanding Balance in red while open. A positive `paymentSummary.pendingClearance` appears immediately below as Balance to be cleared in yellow. This amount is the sum of unsettled receipts.
 
+On the first invoice details step, **Responsible party** asks who picked up the items. **Me** uses the linked employee. **Supervisor** opens the employee picker and **Daily route** opens the route picker and uses the route’s supervisor. Existing assignment permissions apply. **Where will this invoice be paid?** lists every branch in the selected company. The selected branch is independent of the issuing branch and the Daily Income statement.
+
 ### Reserved invoice numbers
+
+Create Invoice reserves a system number when moving beyond Details. Screen two shows the confirmed number. The API takes an available number from the signed-in user’s pool first, then falls back to the company sequence. Cancel before posting a payment releases the number back to that user. Closing the browser leaves an unfinished claim recoverable on that browser. Manual entry keeps its existing permission and skips reservation.
 
 Invoices → Assign invoices manages backend-generated numbers for offline mobile creation.
 Unused numbers may be in the company pool, assigned to a user, or claimed
@@ -285,13 +289,13 @@ This section helps coordinate the day-to-day movement of employees and merchandi
 
 Portal route: `/deliveries` (**Route Deliveries** in the Routes sidebar). This is the restricted barcode work table: **Deliver** and **Print invoice** are its only record actions. `canViewDelivery` returns all tenant pending pieces; `canViewAssignedDeliveries` returns only the authenticated employee’s assigned delivery work. The same controls apply to both scopes; the API enforces assignment isolation. The API may include pending pieces without a route or numeric delivery for broad-access users. Delivery requires a valid numeric delivery; invoice printing requires only a linked invoice. Columns include barcode, invoice, balance and its DOP equivalent, daily-route rate, merchandise, container, sender/receiver contact details, address and city. Server sorting defaults to city ascending. On phones, records become cards grouped by city when sorting by city. The status is chosen explicitly by the driver. The main **Barcodes** table also exposes permission-gated **Deliver** (pending CONDUCE pieces with invoice and numeric delivery), reusing the same delivery wizard. **Print invoice** stays on Invoices (and Route Deliveries), not Barcode Manager.
 
-Route Deliveries opens with `routeEmployee=me`. This includes the linked employee's numeric delivery crew and scheduled delivery route crew. An explicit `canViewDelivery` grant can open Filters and scope the list by **supervisor** (`routeEmployee=<id>`) or **daily route** (`route.id` only — `routeEmployee` is omitted so the list is that route, not every pending piece). **Supervisor** here is only the responsible-party label: the filter lists **employees** and sends that employee **id** (exact match on `employees.id`, never name — “Jonathan A” does not include “Jonathan B”). Daily-route scope uses the route document id, not the display name. Until a supervisor or daily route is chosen, the list stays on the caller’s assigned work (`me`), never the full tenant. Pieces appear in receiver city, invoice number, and barcode number order.
+Route Deliveries opens with `routeEmployee=me`. This includes the linked employee's numeric delivery crew and scheduled delivery route crew. An explicit `canViewDelivery` grant can open Filters and scope the list by **supervisor** (`routeEmployee=<id>`) or **daily route** (`route.id` only — `routeEmployee` is omitted so the list is that route, not every pending piece). **Supervisor** here is only the responsible-party label: the filter lists **employees** and sends that employee **id** (exact crew ID, including the stored supervisor, driver, or helper ID on daily routes without a crew list). Daily-route scope uses the route document id, not the display name. Until a supervisor or daily route is chosen, the list stays on the caller’s assigned work (`me`), never the full tenant. Pieces appear in receiver city, invoice number, and barcode number order.
 
 The list comes from `GET /v1/deliveries/assigned-barcodes` and `POST /v1/deliveries/assigned-barcodes/search`; the API owns tenant, pending status, and assigned-only scope and joins invoice parties. The portal does not resolve employee membership client-side. Completion accepts `canUpdateDelivery` or `canUpdateAssignedDeliveries`, alongside the required invoice access. Contract: `docs/delivery-completion-api-contract.md`.
 
 #### Route Appointments
 
-`/route-appointments` reuses the Appointments table with the same search, filters, server pagination, viewing, editing, completion, printing and invoice creation workflows, subject to each action’s permission. Route management, deletion and standalone appointment creation are absent in this workspace, including mobile cards and detail sheets. PageHeader **View in map** opens the map for selected (or page) stops without ordering. **Reorder route manually** / **Optimize route** open one scheduled route so drivers can manually renumber stops and optionally run Optimize route — from a selected single route, or from an active supervisor / daily-route filter without selecting every stop; assignment and removal stay off. Its map (`/route-appointments/map`) is view-only unless opened for reorder. General Appointments keeps its existing controls. Both list and search on Route Appointments send `routeEmployee=me` to select the authenticated user's active linked employee. Users with the explicit `canViewPickup` grant can open Filters and scope by **supervisor** (employee list → exact `routeEmployee=<id>` on `employees.id`, never name) or **daily pickup route** (exact `route.id`) the same way as Route Deliveries; an active scope never falls back to all routed appointments. The default order groups daily routes and follows their saved stop numbers, with appointment ID as the tie breaker. General Appointments keeps its ordinary list scope. Updates accept the ordinary or assigned-appointment update grant; assigned-only writes cannot change route assignment. The UI does not filter an already downloaded page to infer assignment.
+`/route-appointments` reuses the Appointments table with the same search, filters, server pagination, viewing, editing, completion, printing and invoice creation workflows, subject to each action’s permission. Route management, deletion and standalone appointment creation are absent in this workspace, including mobile cards and detail sheets. PageHeader **View in map** opens the map for selected (or page) stops without ordering. **Reorder route manually** / **Optimize route** open one scheduled route so drivers can manually renumber stops and optionally run Optimize route — from a selected single route, or from an active supervisor / daily-route filter without selecting every stop; assignment and removal stay off. Its map (`/route-appointments/map`) is view-only unless opened for reorder. General Appointments keeps its existing controls. Both list and search on Route Appointments send `routeEmployee=me` to select the authenticated user's active linked employee. Users with the explicit `canViewPickup` grant can open Filters and scope by **supervisor** (employee list → exact `routeEmployee=<id>` on the daily route crew or its legacy role references) or **daily pickup route** (exact `route.id`) the same way as Route Deliveries; an active scope never falls back to all routed appointments. The default order groups daily routes and follows their saved stop numbers, with appointment ID as the tie breaker. General Appointments keeps its ordinary list scope. Updates accept the ordinary or assigned-appointment update grant; assigned-only writes cannot change route assignment. The UI does not filter an already downloaded page to infer assignment.
 
 **Deliver** is an invoice-level logistics operation scoped to the selected
 route/delivery and its pending merchandise pieces, including pieces beyond the
@@ -636,7 +640,7 @@ Do not confuse:
 - Display `user.name` (and other activity fields) **exactly as returned** by list/search.
 - Do **not** resolve, enrich, or “fix” actors by looking up users (or any other resource) client-side when `user.name` is an id, email, or empty.
 - Do **not** write user-activity rows from the portal; the API owns the write path for all clients.
-- Severity is API-owned: common = default, uncommon = yellow, rare = red — display only.
+- The API classifies reconciliation as common, clearing and edits as uncommon (yellow), deletes and operational voids as rare (red), and transaction reversals and voids as severe (bold red).
 
 ##### Backend activity contract
 
@@ -652,13 +656,14 @@ Do not confuse:
    - `origin` — module/entity type (`invoice`, `payment`, `income_statement`, …)
    - `id` — **entity** record id (with `origin`, identifies the referenced record; **not** a separate `invoice` field)
    - `quantity` — optional, only when relevant
-   - `severity` — `common` | `uncommon` | `rare` (API-owned; never computed on the frontend)
+   - `severity` — `common` | `uncommon` | `rare` | `severe` (API-owned; never computed on the frontend)
    - Document primary key: expose as `_id` / `activityId` so it does not collide with entity `id`
 
 2. **Centralized severity mapping** (API decides from action type), e.g.:
-   - Common — normal create/update/view-style work
-   - Uncommon — posting payments, closing daily incomes
-   - Rare — deletes, reopening cuadres, destructive ops
+   - Common — routine activity and reconciliation
+   - Uncommon — edits, bank clearing, posting payments, closing daily incomes
+   - Rare — deletes, operational voids, reopening cuadres
+   - Severe — transaction reversals and transaction voids
 
 3. **Write path** — record activities in the **API** on relevant mutations so all clients (portal, legacy, scripts) are covered. Frontend must not be the sole writer.
 

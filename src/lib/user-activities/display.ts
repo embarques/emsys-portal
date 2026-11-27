@@ -9,6 +9,8 @@ export function getUserActivitySeverityClass(severity: UserActivitySeverity): st
   switch (severity) {
     case "uncommon":
       return "text-amber-700 dark:text-amber-300";
+    case "severe":
+      return "font-semibold text-red-800 dark:text-red-300";
     case "rare":
       return "text-red-700 dark:text-red-400";
     case "common":

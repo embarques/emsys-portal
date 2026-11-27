@@ -28,6 +28,7 @@ import type {
   DailyIncomeStatementValues,
 } from "@/lib/accounting/daily-income/types";
 import { normalizeApiError } from "@/lib/api/axios";
+import { useInvoicePaymentLocations } from "@/lib/invoices/hooks/use-invoice-payment-locations";
 import { useBranchPicker } from "@/lib/branches/hooks/use-branches";
 import { type InvoiceDailyIncomeContext } from "@/lib/invoices/invoice-daily-income-context";
 import { formatInvoiceMoney } from "@/lib/invoices/display";
@@ -44,7 +45,7 @@ import { cn } from "@/lib/utils";
 type Props = {
   paymentDraftRef: MutableRefObject<InvoicePaymentDraft | null>;
   values: InvoiceFormValues;
-  onPaymentLocationChange: (paymentLocation: InvoicePaymentLocation) => void;
+  onPaymentLocationChange: (paymentLocation: InvoicePaymentLocation, branchName?: string) => void;
   onContextChange: (context: InvoiceDailyIncomeContext) => void;
   /** Payment posted or skipped ($0): continue to the next wizard step with this context. */
   onContinue?: (context: InvoiceDailyIncomeContext) => void;
@@ -225,20 +226,9 @@ export function InvoiceDailyIncomeStep({
   const statement = localStatement ?? statementQuery.data ?? null;
   const openCloseout = useOpenInvoiceCloseout(branchId, setLocalStatement);
   const statusError = openCloseout.error;
-  const branchesQuery = useBranchPicker(200);
-  const branches = useMemo(() => branchesQuery.data?.items ?? [], [branchesQuery.data?.items]);
-  const currentBranch = branches.find((branch) => branch.id === branchId);
-  const needsCurrency = currentBranch?.code.trim().toUpperCase() === "RD";
-  const paymentLocationOptions = useMemo(
-    () =>
-      branches
-        .filter((branch) => branch.code.trim())
-        .map((branch) => ({
-          value: branch.code.trim().toUpperCase(),
-          label: branch.code.trim().toUpperCase(),
-        })),
-    [branches],
-  );
+  const paymentLocations = useInvoicePaymentLocations();
+  const currentBranch = paymentLocations.branches?.find((branch) => branch.id === branchId);
+  const needsCurrency = currentBranch?.code?.trim().toUpperCase() === "RD";
 
   const paymentLocationField = (
     <div
@@ -253,14 +243,17 @@ export function InvoiceDailyIncomeStep({
       >
         <SearchableSelect
           id="paymentLocation"
-          value={mapPaymentLocationToPaidRegion(values.paymentLocation)}
-          onValueChange={(next) => onPaymentLocationChange(next as InvoicePaymentLocation)}
+          value={paymentLocations.options.find((branch) =>
+            branch.value === values.paymentLocation || branch.code === mapPaymentLocationToPaidRegion(values.paymentLocation),
+          )?.value ?? values.paymentLocation}
+          onValueChange={(next) => onPaymentLocationChange(next, paymentLocations.options.find((branch) => branch.value === next)?.label)}
           placeholder={t("invoices.form.placeholders.selectPaymentLocation")}
           searchPlaceholder={t("invoices.form.placeholders.searchPaymentLocations")}
           {...wizardSelectFieldProps(values.paymentLocation)}
           required
-          loading={branchesQuery.isLoading}
-          options={paymentLocationOptions}
+          loading={paymentLocations.isLoading}
+          emptyMessage={paymentLocations.isError ? t("invoices.form.placeholders.paymentLocationsUnavailable") : undefined}
+          options={paymentLocations.options}
         />
       </WizardField>
     </div>

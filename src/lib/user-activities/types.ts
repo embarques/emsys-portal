@@ -4,7 +4,7 @@ import { createListTextSearch, type ApiListTextSearch } from "@/lib/api/search-q
 import type { TableFilterRowState } from "@/lib/table/filter-builder";
 
 /** API-owned severity; frontend only displays it. */
-export type UserActivitySeverity = "common" | "uncommon" | "rare";
+export type UserActivitySeverity = "common" | "uncommon" | "rare" | "severe";
 
 /**
  * Actor as returned by the API (`useractivity.UserRef`).

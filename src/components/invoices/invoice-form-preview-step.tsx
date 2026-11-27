@@ -449,13 +449,13 @@ function InvoiceWizardCheckoutReview({
             <h4 className="text-sm font-semibold text-foreground">{t("invoices.wizard.review.invoice")}</h4>
             <dl className="space-y-4">
               <ReviewDetail label={t("invoices.form.fields.invoiceNumber")}>
-                {values.autoGenerateNumber ? values.generatedInvoiceNumber || t("invoices.form.autoNumber.assignedOnSave") : values.invoiceNumber || t("common.empty.dash")}
+                {values.autoGenerateNumber ? values.generatedInvoiceNumber || t("invoices.form.autoNumber.onContinue") : values.invoiceNumber || t("common.empty.dash")}
               </ReviewDetail>
               <ReviewDetail label={t("invoices.form.fields.date")}>
                 {formatInvoiceDate(values.date) || values.date || t("common.empty.dash")}
               </ReviewDetail>
               <ReviewDetail label={t("invoices.form.fields.paymentLocation")}>
-                {getPaymentLocationLabel(values.paymentLocation)}
+                {values.paymentBranchName || getPaymentLocationLabel(values.paymentLocation)}
               </ReviewDetail>
             </dl>
           </div>
@@ -762,11 +762,11 @@ export function InvoiceFormPreviewStep({
 
       <FormSection icon={Receipt} title={t("invoices.form.sections.invoiceDetails")}>
         <div className="grid gap-3 sm:grid-cols-2">
-          <PreviewField label={t("invoices.form.fields.invoiceNumber")} value={values.autoGenerateNumber ? values.generatedInvoiceNumber || t("invoices.form.autoNumber.assignedOnSave") : values.invoiceNumber} />
+          <PreviewField label={t("invoices.form.fields.invoiceNumber")} value={values.autoGenerateNumber ? values.generatedInvoiceNumber || t("invoices.form.autoNumber.onContinue") : values.invoiceNumber} />
           <PreviewField label={t("invoices.form.fields.date")} value={values.date} />
           <PreviewField label={pickupFieldLabel} value={pickupLabel} />
           <PreviewField label={t("invoices.form.fields.container")} value={containerLabel} />
-          <PreviewField label={t("invoices.form.fields.paymentLocation")} value={getPaymentLocationLabel(values.paymentLocation)} />
+          <PreviewField label={t("invoices.form.fields.paymentLocation")} value={values.paymentBranchName || getPaymentLocationLabel(values.paymentLocation)} />
           <PreviewField label={t("invoices.form.fields.pickupRoute")} value={pickupRouteLabel} />
           <PreviewField label={t("invoices.form.fields.supervisorEmployee")} value={supervisorLabel} />
         </div>

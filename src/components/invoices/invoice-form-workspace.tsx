@@ -8,7 +8,7 @@ import { usePinnedEditSnapshot } from "@/lib/forms/use-pinned-edit-snapshot";
 import { useAuth } from "@/lib/auth/hooks/use-auth";
 import { formatFormMutationError } from "@/lib/errors";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowLeft, Loader2 } from "lucide-react";
 
 import { useFeedback } from "@/components/app-shell/feedback-provider";
@@ -126,6 +126,8 @@ function InvoiceWizardShell({
 }: InvoiceWizardShellProps) {
   const { t } = useTranslation();
   const shellRef = useFormViewport();
+  const { companyId, user } = useAuth();
+  const cancelDraftRef = useRef<(() => void) | null>(null);
   return (
     <div ref={shellRef} className={cn("flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden overflow-x-hidden", inDialog && "md:block", invoiceWizardTypographyRoot)}>
       <div className={cn("mx-auto flex min-h-0 min-w-0 w-full max-w-full flex-1 flex-col overflow-x-hidden md:max-w-6xl", inDialog && "md:block")}>
@@ -142,13 +144,14 @@ function InvoiceWizardShell({
               <h1 className="shrink-0 text-base font-semibold leading-tight">{title}</h1>
               <p className="min-w-0 truncate text-sm text-muted-foreground" title={description}>{description}</p>
             </div>
-            <Button variant="outline" size="sm" className="shrink-0" onClick={onCancel}>
+            <Button variant="outline" size="sm" className="shrink-0" onClick={() => cancelDraftRef.current?.()}>
               <ArrowLeft className="size-4" />
               {t("invoices.form.design.backToInvoices")}
             </Button>
           </div>
           <InvoiceFormWizard
-            key={`${initialValues.invoiceId || "new"}:${formNonce ?? 0}:${initialWizardStep ?? 1}`}
+            cancelDraftRef={cancelDraftRef}
+            key={`${companyId}:${user?.uid}:${initialValues.invoiceId || "new"}:${formNonce ?? 0}:${initialWizardStep ?? 1}`}
             initialValues={initialValues}
             submitLabel={submitLabel}
             isEditing={isEditing}
@@ -425,7 +428,7 @@ export function InvoiceCreateWizard({
       onSubmit={handleSubmit}
       inDialog={inDialog}
       {...(appointmentId ? { resetAfterSave: false, onSaved: onCancel } : {})}
-      {...(isAssignedOnly ? { assignedMode: true, initialWizardStep: 2 } : {})}
+      {...(isAssignedOnly ? { assignedMode: true } : {})}
     />
   );
 }

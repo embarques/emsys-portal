@@ -16,6 +16,7 @@ type Props = {
   autoGenerate: boolean;
   invoiceNumber: string;
   generatedInvoiceNumber?: string;
+  systemHint?: string;
   canUseManualNumber?: boolean;
   disabled?: boolean;
   className?: string;
@@ -45,6 +46,7 @@ export function InvoiceNumberModeFields({
   autoGenerate,
   invoiceNumber,
   generatedInvoiceNumber = "",
+  systemHint,
   canUseManualNumber = true,
   disabled = false,
   className,
@@ -125,7 +127,7 @@ export function InvoiceNumberModeFields({
         </div>
         {mode === "system" ? (
           <p className="text-xs text-muted-foreground">
-            {generatedInvoiceNumber || t("invoices.form.autoNumber.hint")}
+            {generatedInvoiceNumber || systemHint || t("invoices.form.autoNumber.hint")}
           </p>
         ) : null}
         {!canUseManualNumber ? (

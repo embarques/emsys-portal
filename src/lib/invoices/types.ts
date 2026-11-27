@@ -156,6 +156,7 @@ export type Invoice = ApiTableRecord & {
   containerId: string;
   containerName?: string;
   paymentLocation: InvoicePaymentLocation;
+  paymentBranchName?: string;
   /**
    * NY receive-route snapshot for recordkeeping / insights when `receivedBy` is a
    * daily route. Not financial ownership for later payments, surcharges, or discounts.
@@ -235,7 +236,10 @@ export type InvoiceLineItemFormValues = {
   totalManual: boolean;
 };
 
+export type InvoiceReservationProof = { id: string; token: string; deviceId: string };
+
 export type InvoiceFormValues = {
+  reservation?: InvoiceReservationProof;
   version?: string;
   autoGenerateNumber?: boolean;
   generatedInvoiceNumber?: string;
@@ -245,6 +249,7 @@ export type InvoiceFormValues = {
   pickupId: string;
   containerId: string;
   paymentLocation: InvoicePaymentLocation;
+  paymentBranchName?: string;
   pickupSource: InvoicePickupSource;
   routeId: string;
   routeCrewId: string;
@@ -608,7 +613,7 @@ export function createEmptyInvoiceForm(createdBy = DEFAULT_CREATED_BY): InvoiceF
   return {
     invoiceId: createInvoiceId(),
     invoiceNumber: "",
-    autoGenerateNumber: false,
+    autoGenerateNumber: true,
     date: todayDateInputValue(),
     pickupId: "",
     containerId: "",
@@ -672,6 +677,7 @@ export function resetInvoiceFormForNextEntry(
     date: previous.date,
     containerId: previous.containerId,
     paymentLocation: previous.paymentLocation,
+    paymentBranchName: previous.paymentBranchName,
     pickupSource: previous.pickupSource,
     routeId: previous.routeId,
     routeCrewId: previous.routeCrewId,
@@ -915,6 +921,7 @@ export function invoiceToFormValues(invoice: Invoice): InvoiceFormValues {
     pickupId: invoice.pickupId ?? "",
     containerId: invoice.containerId,
     paymentLocation: invoice.paymentLocation,
+    paymentBranchName: invoice.paymentBranchName,
     pickupSource: normalizeInvoicePickupSource(invoice.pickupSource, invoice.officeBranchId),
     routeId: invoice.routeId ?? "",
     routeCrewId: invoice.routeCrewId ?? "",

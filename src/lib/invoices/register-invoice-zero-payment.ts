@@ -39,6 +39,7 @@ export async function registerInvoiceZeroPaymentInCuadre(params: {
     employeeId: employee.id,
     employeeName: employee.name,
     invoiceNumber: invoice.invoiceNumber,
+    invoiceReservation: invoice.reservation,
     autoGenerateInvoiceNumber: Boolean(invoice.autoGenerateNumber && !invoice.generatedInvoiceNumber),
     invoiceCost,
     invoiceDiscount,

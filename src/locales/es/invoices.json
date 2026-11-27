@@ -231,6 +231,7 @@
       "receiver": "Destinatario",
       "pickupReference": "Referencia de recogida",
       "pickupReceiver": "Destinatario de esta recogida",
+      "responsiblePartyTitle": "Responsable",
       "responsibleParty": "¿Quién es responsable de recoger los artículos de esta factura?",
       "pickupSource": "Recibido vía",
       "pickupSourceCreator": "Yo",
@@ -260,6 +261,7 @@
       "selectPickupRoute": "Seleccionar ruta diaria",
       "noPickupRoute": "Sin ruta diaria",
       "searchPickupRoutes": "Buscar rutas diarias…",
+      "paymentLocationsUnavailable": "No se pudieron cargar las sucursales de pago.",
       "selectPaymentLocation": "Seleccionar sucursal",
       "searchPaymentLocations": "Buscar sucursales…",
       "selectWarehouseEmployee": "Seleccionar empleado de almacén",
@@ -340,6 +342,7 @@
       "modeSystem": "Generado por el sistema",
       "modeCustom": "Ingresar el propio",
       "customLabel": "Número de factura personalizado",
+      "onContinue": "Se reserva en el siguiente paso",
       "assignedOnSave": "Se asignará al guardar",
       "hint": "EMSYS generará un número de factura del rango de su empresa al guardar."
     }

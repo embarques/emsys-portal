@@ -1064,7 +1064,7 @@ export function InvoicesWorkspace() {
       cellClassName: "overflow-visible",
       renderCell: (invoice) => (
         <TableTagText className={getBranchBadgeClass(invoice.paymentLocation)}>
-          {getPaymentLocationLabel(invoice.paymentLocation)}
+          {invoice.paymentBranchName || getPaymentLocationLabel(invoice.paymentLocation)}
         </TableTagText>
       ),
     },

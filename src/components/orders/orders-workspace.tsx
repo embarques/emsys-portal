@@ -396,7 +396,7 @@ export function OrdersWorkspace({
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const { page, setPage, pageSize, pageLimit, changePageSize, rememberTotal } = useTablePageSize();
   const { sort, onSortChange } = useTableSort(
-    routeMode ? "orderNumber:asc,id:asc" : DEFAULT_ORDER_LIST_PARAMS.sort,
+    routeMode ? "route.id:asc,orderNumber:asc,id:asc" : DEFAULT_ORDER_LIST_PARAMS.sort,
     () => setPage(1),
   );
   const [viewOrder, setViewOrder] = useState<Order | null>(null);

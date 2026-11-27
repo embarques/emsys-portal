@@ -205,6 +205,7 @@ type ApiInvoice = {
   updatedAt?: string;
   legacySyncedAt?: string;
   paidRegion?: string;
+  paymentBranch?: { id?: number; name?: string; code?: string };
   paidStatus?: string;
   cost?: number;
   payment?: number;
@@ -659,7 +660,8 @@ function normalizeInvoice(raw: unknown): Invoice | null {
     date: toInvoiceDateValue(String(item.date ?? "")),
     containerId: item.container?.id != null ? String(item.container.id) : "",
     containerName: String(item.container?.name ?? "").trim() || undefined,
-    paymentLocation: mapPaidRegionToPaymentLocation(paidRegion),
+    paymentLocation: item.paymentBranch?.id ? `BRANCH:${item.paymentBranch.id}` : mapPaidRegionToPaymentLocation(paidRegion),
+    paymentBranchName: item.paymentBranch?.name,
     paidRegion: paidRegion || undefined,
     paidStatus: String(item.paidStatus ?? "").trim() || undefined,
     cost: cost || undefined,
@@ -1401,6 +1403,7 @@ type ApiInvoiceReceivedByWrite =
 
 type ApiInvoiceWritePayload = {
   autoGenerateNumber?: boolean;
+  reservation?: InvoiceFormValues["reservation"];
   number?: string;
   date: string;
   incomeStatement?: { id: number };
@@ -1410,7 +1413,8 @@ type ApiInvoiceWritePayload = {
   balance: number;
   discount?: number;
   surcharge: number;
-  paidRegion: string;
+  paidRegion?: string;
+  paymentBranch?: { id: number };
   paidStatus: string;
   employee?: InvoiceWriteEmployeeRef | null;
   dailyRouteId?: string;
@@ -1645,13 +1649,16 @@ function buildInvoiceWritePayload(
 
   const payload: ApiInvoiceWritePayload = {
     ...(autoGenerateNumber ? { autoGenerateNumber: true } : { number: invoiceNumber }),
+    ...(!options.isUpdate && values.reservation ? { reservation: values.reservation } : {}),
     date: values.date.trim().slice(0, 10),
     branch: buildApiBranchDto(context.branch),
     cost,
     payment: Math.round(payment * 100) / 100,
     balance,
     surcharge: 0,
-    paidRegion: mapPaymentLocationToPaidRegion(values.paymentLocation),
+    ...(values.paymentLocation.startsWith("BRANCH:")
+      ? { paymentBranch: { id: Number(values.paymentLocation.slice("BRANCH:".length)) } }
+      : { paidRegion: mapPaymentLocationToPaidRegion(values.paymentLocation) }),
     paidStatus: deriveInvoicePaidStatus(cost, discount, payment, balance),
     container: {
       id: context.container.id,
