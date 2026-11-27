@@ -38,6 +38,7 @@ export const API_ENDPOINTS = {
   DELIVERIES_ASSIGNED_BARCODES: "/deliveries/assigned-barcodes",
   INVOICE_RECEIVER_SIGNATURE: (dailyRouteId: string, invoiceId: string) =>
     `/deliveries/${encodeURIComponent(dailyRouteId)}/invoices/${encodeURIComponent(invoiceId)}/receiver/signature`,
+  EMBEDDED_BARCODES: "/barcodes/embedded",
   BARCODES: "/barcodes",
   /** Tenant barcode status catalog for pickers (labels:view). */
   BARCODES_STATUS_OPTIONS: "/barcodes/status-options",

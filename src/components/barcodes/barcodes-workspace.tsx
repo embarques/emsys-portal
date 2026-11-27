@@ -371,9 +371,6 @@ export function BarcodesWorkspace() {
       payload: {
         number: barcode.number,
         status: { id: option.id, name: option.name },
-        ...(barcode.container?.id != null
-          ? { container: { id: barcode.container.id, name: barcode.container.name } }
-          : {}),
       },
     }));
 
@@ -411,15 +408,6 @@ export function BarcodesWorkspace() {
       writeTarget: barcode.id > 0 ? "barcodes" : "invoice-embedded",
       payload: {
         number: barcode.number,
-        status:
-          barcode.status?.id != null && barcode.status.name?.trim()
-            ? { id: barcode.status.id, name: barcode.status.name.trim() }
-            : FALLBACK_BARCODE_STATUS_OPTIONS[0]
-              ? {
-                  id: FALLBACK_BARCODE_STATUS_OPTIONS[0].id,
-                  name: FALLBACK_BARCODE_STATUS_OPTIONS[0].name,
-                }
-              : { id: 1, name: "CREATED" },
         container: { id: container.id, name: container.name },
       },
     }));

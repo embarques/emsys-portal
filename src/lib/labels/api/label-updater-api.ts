@@ -8,18 +8,17 @@ import { translateCurrent } from "@/lib/i18n/translate-current";
 import { fetchBarcodeStatusOptions } from "@/lib/barcodes/api/barcode-status-options-api";
 import {
   findInvoiceBarcodeByNumber,
-  patchInvoiceEmbeddedBarcodes,
 } from "@/lib/invoices/api/invoices-api";
 import type { InvoiceLineItemBarcode } from "@/lib/invoices/types";
 import { getBarcodeStatusLabel } from "@/lib/labels/display";
 import {
   fetchBarcodeByNumber,
   updateBarcode,
+  updateInvoiceBarcode,
   type BarcodeWritePayload,
 } from "@/lib/labels/api/barcodes-api";
 import {
   FALLBACK_BARCODE_STATUS_OPTIONS,
-  NEW_BARCODE_STATUS,
   type Barcode,
   type BarcodeScannerOptions,
   type BarcodeStatusOption,
@@ -360,7 +359,7 @@ async function performBarcodeScanUpdate(
       id: createRecordId(),
       success: true,
       barcode,
-      invoiceNumber: embedded?.invoiceNumber,
+      invoiceNumber: embedded?.invoiceNumber ?? existing.invoiceNumber,
       container: previousContainer,
       date: formatResultDate(timestamp),
       dateTime: formatResultDateTime(timestamp),
@@ -391,53 +390,25 @@ async function performBarcodeScanUpdate(
     const assertRouteDate = await fetchRouteDateGuard(options.newRouteBranchId);
     assertRouteDate(options.newRouteDate ?? "");
   }
-  if (embedded) {
-    const status =
-      payload.status?.id != null && payload.status.id > 0 && payload.status.name?.trim()
-        ? { id: payload.status.id, name: payload.status.name.trim() }
-        : NEW_BARCODE_STATUS;
-
-    await patchInvoiceEmbeddedBarcodes(embedded.invoiceId, [
-      {
-        barcodeId: embedded.barcode.barcodeId?.trim() || "",
-        number: embedded.barcode.number,
-        status,
-        ...(payload.container
-          ? { container: { id: payload.container.id, name: payload.container.name } }
-          : {}),
-        ...(payload.route
-          ? { route: { id: payload.route.id, name: payload.route.name } }
-          : {}),
-      },
-    ]);
-
-    // Keep the `/barcodes` directory mirror in sync when present.
-    try {
-      const catalog = await fetchBarcodeByNumber(embedded.barcode.number);
-      if (catalog.id > 0) {
-        await updateBarcode(catalog.id, {
-          number: embedded.barcode.number,
-          status,
-          container: payload.container ?? undefined,
-          route: payload.route ?? undefined,
-        }, catalog);
-      }
-    } catch {
-      // Catalog may not have a row yet; invoice embed remains authoritative.
-    }
-
-    updated = {
-      ...existing,
-      status,
-      container: payload.container
-        ? { id: payload.container.id, name: payload.container.name }
-        : existing.container,
-      route: payload.route
-        ? { id: payload.route.id, name: payload.route.name }
-        : existing.route,
+  try {
+    const patch = {
+      number: existing.number,
+      ...(options.changeStatus ? { status: payload.status } : {}),
+      ...(options.changeContainer ? { container: payload.container } : {}),
+      ...(options.changeRoute ? { route: payload.route } : {}),
     };
-  } else {
-    updated = await updateBarcode(existing.id, payload, existing);
+    updated = embedded
+      ? await updateInvoiceBarcode(embedded.invoiceId, embedded.barcode.barcodeId, patch)
+      : await updateBarcode(existing.id, patch, existing);
+  } catch (error) {
+    return {
+      ...failureResult(barcode, formatUserErrorMessage(error, t ?? translateCurrent), timestamp, performedBy),
+      invoiceNumber: embedded?.invoiceNumber ?? existing.invoiceNumber,
+      container: previousContainer,
+      previousStatus,
+      previousContainer,
+      previousRoute,
+    };
   }
 
   const resultTimestamp = updated.updatedAt ?? timestamp;
@@ -446,7 +417,7 @@ async function performBarcodeScanUpdate(
     id: createRecordId(),
     success: true,
     barcode: updated.number,
-    invoiceNumber: embedded?.invoiceNumber,
+    invoiceNumber: embedded?.invoiceNumber ?? existing.invoiceNumber,
     container: formatContainerLabel(updated.container, options.resolveContainerLabel),
     date: formatResultDate(resultTimestamp),
     dateTime: formatResultDateTime(resultTimestamp),

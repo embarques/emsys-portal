@@ -298,13 +298,15 @@ test("embedded update adapter forwards null and preserves omission without a cat
   const api = loadFeature(feature, {
     get: async () => {throw new Error("Unexpected catalog read");},
     post: async () => {throw new Error("Unexpected catalog search");},
-  }, {patchInvoiceEmbeddedBarcodes: async (id, patches) => {calls.push({id, patches});}});
+    put: async (url, payload) => { calls.push({url, payload}); return {success:true, data:payload}; },
+  }, {});
   for (const route of [null, undefined]) {
     await api.updateBarcodes([{id: 123, barcodeId: "piece", invoiceId: "42", writeTarget: "invoice-embedded", payload: {
       number: "A", status: {id: 6, name: "CONDUCE"}, ...(route === null ? {route} : {}),
     }}]);
   }
-  assert.equal(calls[0].id, "42");
-  assert.equal(calls[0].patches[0].route, null);
-  assert.equal(Object.hasOwn(calls[1].patches[0], "route"), false);
+  assert.equal(calls[0].url, "/barcodes/embedded/42");
+  assert.equal(calls[0].payload.route, null);
+  assert.equal(Object.hasOwn(calls[1].payload, "route"), false);
+  assert.equal(Object.hasOwn(calls[1].payload, "barcodeId"), false);
 });
