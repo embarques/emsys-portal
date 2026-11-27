@@ -108,6 +108,7 @@ function readStringId(value: unknown): string | undefined {
 function normalizeSeverity(value: unknown): UserActivitySeverity {
   const raw = readString(value).toLowerCase();
   if (raw === "uncommon") return "uncommon";
+  if (raw === "severe") return "severe";
   if (raw === "rare") return "rare";
   return "common";
 }

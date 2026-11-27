@@ -26,7 +26,7 @@ export function buildAgreementInvoiceLines(invoice: InvoiceFormValues): string[]
   return [
     `Invoice: ${invoice.invoiceNumber || invoice.generatedInvoiceNumber || "—"}`,
     `Date: ${formatInvoiceDate(invoice.date)}`,
-    `Payment location: ${getPaymentLocationLabel(invoice.paymentLocation)}`,
+    `Payment location: ${invoice.paymentBranchName || getPaymentLocationLabel(invoice.paymentLocation)}`,
     "",
     ...partyLines("Sender", invoice.sender),
     "",

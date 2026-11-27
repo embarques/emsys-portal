@@ -13,6 +13,7 @@ import {
   Route as RouteIcon,
   ScanBarcode,
   Tag,
+  Trash2,
   Truck,
 } from "lucide-react";
 
@@ -22,10 +23,13 @@ import { DeliverDialog } from "@/components/deliveries/deliver-dialog";
 import { useDeliveryAccess } from "@/lib/deliveries/hooks/use-deliver-invoice";
 import { canStartBarcodeDelivery } from "@/lib/deliveries/utils/can-start-barcode-delivery";
 import { InvoiceEditWizard } from "@/components/invoices/invoice-form-workspace";
+import { InvoiceViewSheet } from "@/components/invoices/invoice-view-sheet";
+import { InvoicePrintSignaturesDialog } from "@/components/invoices/invoice-print-signatures-dialog";
 import { DataTable } from "@/components/app-shell/data-table";
 import { TablePaginationControls } from "@/components/app-shell/table-pagination-controls";
 import { DirectoryTableLoader } from "@/components/app-shell/directory-table-loader";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
+import { ConfirmDeleteButton } from "@/components/app-shell/confirm-delete-button";
 import { PageHeader } from "@/components/app-shell/page-header";
 import {
   DirectoryInsightsFlip,
@@ -58,7 +62,6 @@ import {
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -75,6 +78,7 @@ import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { useTranslation } from "@/lib/i18n";
 import { useUserError } from "@/lib/errors";
 import { normalizeApiError } from "@/lib/api/axios";
+import { reportBulkSettled } from "@/lib/api/report-bulk-settled";
 import {
   computeBarcodeKpis,
   formatBarcodeContainer,
@@ -86,6 +90,7 @@ import {
 } from "@/lib/barcodes/display";
 import { formatAuditDateTime } from "@/lib/audit/display";
 import { useBarcodeKpis, useBarcodeStats, useBarcodes } from "@/lib/barcodes/hooks/use-barcodes";
+import { buildInvoiceBarcodesHref } from "@/lib/barcodes/invoice-search";
 import {
   DEFAULT_BARCODE_DIRECTORY_SORT,
   buildBarcodeListParams,
@@ -95,6 +100,18 @@ import {
 import { formatContainerLabel } from "@/lib/containers/display";
 import { useContainerPicker } from "@/lib/containers/hooks/use-containers";
 import { formatInvoiceTabLabel } from "@/lib/invoices/display";
+import { buildInvoiceCommentActivity } from "@/lib/invoices/activity";
+import {
+  useDeleteInvoices,
+  useInvoice,
+  useInvoiceJournals,
+} from "@/lib/invoices/hooks/use-invoices";
+import { mapInvoiceJournalsToPayments } from "@/lib/invoices/invoice-journals";
+import {
+  createInvoiceComment,
+  getInvoiceRecordId,
+  type Invoice,
+} from "@/lib/invoices/types";
 import type { BarcodeUpdate } from "@/lib/labels/api/barcodes-api";
 import { useUpdateBarcodes } from "@/lib/labels/hooks/use-barcodes";
 import { useBarcodeStatusOptions } from "@/lib/labels/hooks/use-label-display";
@@ -150,15 +167,20 @@ export function BarcodesWorkspace() {
   const { t } = useTranslation();
   const { toErrorMessage } = useUserError();
   const barcodeFilterFields = useBarcodeFilterFields();
-  const { notifyUpdated, notifyError } = useFeedback();
-  const { openFormTab, isDesktopTabs } = useWorkspaceTabs();
+  const { notifyAdded, notifyDeleted, notifyUpdated, notifyError } = useFeedback();
+  const { openTab, openFormTab, isDesktopTabs } = useWorkspaceTabs();
   const { hasPermission } = useAuth();
   // Barcodes are owned by invoice line items; editing them opens the invoice editor.
+  const canViewInvoices = hasPermission(PERMISSIONS.invoicesView.name, PERMISSIONS.invoicesView.resourceType);
   const canUpdateInvoices = hasPermission(PERMISSIONS.invoicesUpdate.name, PERMISSIONS.invoicesUpdate.resourceType);
+  const canDeleteInvoices = hasPermission(PERMISSIONS.invoicesDelete.name, PERMISSIONS.invoicesDelete.resourceType);
+  const canPrintInvoices = hasPermission(PERMISSIONS.invoicesPrint.name, PERMISSIONS.invoicesPrint.resourceType);
+  const canViewBarcodes = hasPermission(PERMISSIONS.packagesView.name, PERMISSIONS.packagesView.resourceType);
   const barcodeStatusOptions = useBarcodeStatusOptions();
   const { data: containersData } = useContainerPicker(200);
   const containers = useMemo(() => containersData?.items ?? [], [containersData?.items]);
   const updateBarcodesMutation = useUpdateBarcodes();
+  const deleteInvoicesMutation = useDeleteInvoices();
   const { canPrint, isPrinting, printBarcodes } = usePrintBarcodes();
   const deliveryAccess = useDeliveryAccess();
   const deliveryScope = `${deliveryAccess.companyId}:${deliveryAccess.actorId}:${deliveryAccess.viewScope}`;
@@ -175,7 +197,13 @@ export function BarcodesWorkspace() {
   const { page, setPage, pageSize, pageLimit, changePageSize, rememberTotal } = useTablePageSize();
   const { sort, onSortChange } = useTableSort(DEFAULT_BARCODE_DIRECTORY_SORT, () => setPage(1));
   const [viewBarcode, setViewBarcode] = useState<Barcode | null>(null);
+  const [viewInvoiceId, setViewInvoiceId] = useState<string | null>(null);
+  const [viewInvoiceNumberHint, setViewInvoiceNumberHint] = useState("");
+  const [viewOverlay, setViewOverlay] = useState<Partial<Invoice> | null>(null);
+  const [deleteInvoiceTarget, setDeleteInvoiceTarget] = useState<Invoice | null>(null);
+  const [printInvoiceIds, setPrintInvoiceIds] = useState<string[]>([]);
   const [editInvoiceId, setEditInvoiceId] = useState<string | null>(null);
+  const [editInvoiceNumber, setEditInvoiceNumber] = useState("");
   const [editInvoiceInitialStep, setEditInvoiceInitialStep] = useState<number | undefined>(undefined);
   const [editInvoiceFocusBarcodeId, setEditInvoiceFocusBarcodeId] = useState<string | undefined>(
     undefined,
@@ -206,6 +234,14 @@ export function BarcodesWorkspace() {
   const { data, isLoading, isError, error, isFetching } = useBarcodes(listParams);
   const stats = useBarcodeStats();
   const kpiQuery = useBarcodeKpis();
+  const { data: detailInvoice } = useInvoice(viewInvoiceId, Boolean(viewInvoiceId));
+  const viewedInvoiceNumber =
+    detailInvoice?.invoiceNumber?.trim() || viewInvoiceNumberHint.trim() || undefined;
+  const { data: invoiceJournals } = useInvoiceJournals(
+    viewInvoiceId,
+    viewedInvoiceNumber,
+    Boolean(viewInvoiceId),
+  );
 
   const barcodes = useResolvedPaginatedItems(data?.items, data?.total, isFetching);
   const totalBarcodes = data?.total ?? 0;
@@ -216,6 +252,28 @@ export function BarcodesWorkspace() {
     barcodes.length > 0 && barcodes.every((barcode) => selectedIds.includes(barcodeSelectionKey(barcode)));
   const selectedBarcodes = barcodes.filter((barcode) => selectedIds.includes(barcodeSelectionKey(barcode)));
   const isUpdating = updateBarcodesMutation.isPending;
+  const isDeletingInvoice = deleteInvoicesMutation.isPending;
+  const isPrintingInvoice = printInvoiceIds.length > 0;
+
+  const viewInvoice = useMemo(() => {
+    if (!viewInvoiceId || !detailInvoice) return null;
+
+    const journalPayments = mapInvoiceJournalsToPayments(
+      invoiceJournals ?? [],
+      detailInvoice.invoiceId,
+      t,
+    );
+
+    if (!viewOverlay && journalPayments.length === 0) return detailInvoice;
+
+    return {
+      ...detailInvoice,
+      comments: [...detailInvoice.comments, ...(viewOverlay?.comments ?? [])],
+      activity: [...detailInvoice.activity, ...(viewOverlay?.activity ?? [])],
+      payments: journalPayments.length > 0 ? journalPayments : detailInvoice.payments,
+      updatedAt: viewOverlay?.updatedAt ?? detailInvoice.updatedAt,
+    };
+  }, [detailInvoice, invoiceJournals, t, viewInvoiceId, viewOverlay]);
 
   useTableSelectionReset<string>(
     buildTableSelectionResetKey(debouncedQuery, filters.rows, page, pageLimit),
@@ -257,19 +315,33 @@ export function BarcodesWorkspace() {
     return getInvoiceTargetForBarcode(selectedBarcodes[0]);
   }, [selectedBarcodes]);
 
-  function openInvoiceForBarcode(
-    barcode: Barcode,
-    options?: {
-      initialWizardStep?: number;
-      focusBarcode?: boolean;
-    },
-  ) {
+  function closeInvoiceView() {
+    setViewInvoiceId(null);
+    setViewInvoiceNumberHint("");
+    setViewOverlay(null);
+  }
+
+  function viewInvoiceForBarcode(barcode: Barcode) {
     const target = getInvoiceTargetForBarcode(barcode);
     if (!target) {
       notifyError(t("barcodes.bulk.noInvoice"));
       return;
     }
 
+    setViewBarcode(null);
+    setViewOverlay(null);
+    setViewInvoiceNumberHint(target.invoiceNumber);
+    setViewInvoiceId(target.invoiceId);
+  }
+
+  function openInvoiceEditor(
+    target: { invoiceId: string; invoiceNumber: string; focusBarcodeId?: string },
+    options?: {
+      initialWizardStep?: number;
+      focusBarcode?: boolean;
+    },
+  ) {
+    closeInvoiceView();
     setViewBarcode(null);
 
     const focusBarcodeId = options?.focusBarcode ? target.focusBarcodeId : undefined;
@@ -294,21 +366,87 @@ export function BarcodesWorkspace() {
       return;
     }
 
+    setEditInvoiceNumber(target.invoiceNumber);
     setEditInvoiceInitialStep(initialWizardStep);
     setEditInvoiceFocusBarcodeId(focusBarcodeId);
     setEditInvoiceFormNonce(formNonce);
     setEditInvoiceId(target.invoiceId);
   }
 
-  function openSelectedInvoice(options?: {
-    initialWizardStep?: number;
-    focusBarcode?: boolean;
-  }) {
+  function openInvoiceForBarcode(
+    barcode: Barcode,
+    options?: {
+      initialWizardStep?: number;
+      focusBarcode?: boolean;
+    },
+  ) {
+    const target = getInvoiceTargetForBarcode(barcode);
+    if (!target) {
+      notifyError(t("barcodes.bulk.noInvoice"));
+      return;
+    }
+    openInvoiceEditor(target, options);
+  }
+
+  function openSelectedInvoiceView() {
     if (!selectedBarcodes[0]) {
       notifyError(t("barcodes.bulk.noInvoice"));
       return;
     }
-    openInvoiceForBarcode(selectedBarcodes[0], options);
+    viewInvoiceForBarcode(selectedBarcodes[0]);
+  }
+
+  function openManageItemsForInvoice(invoice: Invoice) {
+    if (!canViewBarcodes) return;
+    openTab(buildInvoiceBarcodesHref([invoice.invoiceNumber]), undefined, { forceNew: true });
+  }
+
+  function addInvoiceComment(invoiceId: string, description: string) {
+    const comment = createInvoiceComment(description);
+    const timestamp = comment.createdAt;
+    const activityEntry = buildInvoiceCommentActivity(
+      invoiceId,
+      description,
+      comment.createdBy,
+      timestamp,
+      t,
+    );
+
+    setViewOverlay((current) => ({
+      ...current,
+      comments: [...(current?.comments ?? []), comment],
+      activity: [...(current?.activity ?? []), activityEntry],
+      updatedAt: timestamp,
+    }));
+
+    notifyAdded(t("invoices.view.comments.entity"));
+  }
+
+  async function confirmDeleteInvoice() {
+    if (!deleteInvoiceTarget) return;
+
+    try {
+      const result = await deleteInvoicesMutation.mutateAsync([
+        { id: deleteInvoiceTarget.invoiceId, version: deleteInvoiceTarget.version },
+      ]);
+
+      reportBulkSettled({
+        result,
+        t,
+        entityLabel: t("invoices.entity"),
+        notifyDeleted,
+        notifyError,
+        onAllFailed: (message) => {
+          notifyError(message);
+        },
+        onDone: () => {
+          setDeleteInvoiceTarget(null);
+          closeInvoiceView();
+        },
+      });
+    } catch (mutationError) {
+      notifyError(normalizeApiError(mutationError).message);
+    }
   }
 
   function selectBarcodeForBulk(barcode: Barcode) {
@@ -676,8 +814,22 @@ export function BarcodesWorkspace() {
           pageRowIds={barcodes.map(barcodeSelectionKey)}
           totalCount={totalBarcodes}
           onSelectedIdsChange={setSelectedIds}
-          onEdit={() => openSelectedInvoice({ initialWizardStep: 3, focusBarcode: true })}
-          onDelete={() => openSelectedInvoice({ initialWizardStep: 3, focusBarcode: true })}
+          onEdit={() => {
+            if (selectedBarcodes[0]) {
+              openInvoiceForBarcode(selectedBarcodes[0], {
+                initialWizardStep: 3,
+                focusBarcode: true,
+              });
+            }
+          }}
+          onDelete={() => {
+            if (selectedBarcodes[0]) {
+              openInvoiceForBarcode(selectedBarcodes[0], {
+                initialWizardStep: 3,
+                focusBarcode: true,
+              });
+            }
+          }}
           canEdit={canUpdateInvoices}
           canDelete={canUpdateInvoices}
           editDisabled={!selectedInvoiceTarget || isUpdating}
@@ -699,6 +851,7 @@ export function BarcodesWorkspace() {
                 disabled={isUpdating || isFetching}
                 hidden={
                   !deliveryAccess.canDeliver &&
+                  !canViewInvoices &&
                   !canUpdateInvoices &&
                   selectedIds.length === 0
                 }
@@ -723,10 +876,10 @@ export function BarcodesWorkspace() {
                     {t("deliveries.deliver.action")}
                   </TableSelectionActionItem>
                 ) : null}
-                {canUpdateInvoices ? (
+                {canViewInvoices ? (
                   <TableSelectionActionItem
                     disabled={!selectedInvoiceTarget || isUpdating}
-                    onSelect={() => openSelectedInvoice()}
+                    onSelect={() => openSelectedInvoiceView()}
                     className={tableSelectionActionMenuStyles.view}
                   >
                     <FileText className="size-4" />
@@ -842,7 +995,7 @@ export function BarcodesWorkspace() {
         actionsDisabled={isUpdating || isFetching}
         canDeliver={deliveryAccess.canDeliver}
         canPrint={canPrint}
-        canOpenInvoice={canUpdateInvoices}
+        canOpenInvoice={canViewInvoices}
         canChangeStatus
         canTransferContainer
         canAssignRoute
@@ -867,7 +1020,7 @@ export function BarcodesWorkspace() {
         onPrint={(barcode) => {
           void printBarcodes([barcode]);
         }}
-        onOpenInvoice={(barcode) => openInvoiceForBarcode(barcode)}
+        onOpenInvoice={(barcode) => viewInvoiceForBarcode(barcode)}
         onChangeStatus={openStatusForBarcode}
         onTransferContainer={openContainerForBarcode}
         onAssignRoute={openRouteForBarcode}
@@ -877,6 +1030,39 @@ export function BarcodesWorkspace() {
         onDelete={(barcode) =>
           openInvoiceForBarcode(barcode, { initialWizardStep: 3, focusBarcode: true })
         }
+      />
+
+      <InvoiceViewSheet
+        key={viewInvoiceId ?? "invoice-view"}
+        invoice={viewInvoice}
+        open={Boolean(viewInvoiceId)}
+        onOpenChange={(open) => {
+          if (!open) closeInvoiceView();
+        }}
+        onEdit={(invoice, options) =>
+          openInvoiceEditor(
+            {
+              invoiceId: getInvoiceRecordId(invoice),
+              invoiceNumber: invoice.invoiceNumber,
+            },
+            { initialWizardStep: options?.initialWizardStep },
+          )
+        }
+        onDelete={(invoice) => {
+          closeInvoiceView();
+          setDeleteInvoiceTarget(invoice);
+        }}
+        canEdit={canUpdateInvoices}
+        canDelete={canDeleteInvoices}
+        deleteBlocked={Boolean(viewInvoice?.hasAccountingEntries)}
+        onManageItems={openManageItemsForInvoice}
+        manageItemsDisabled={!canViewBarcodes}
+        onPrint={(invoice) => {
+          if (canPrintInvoices && invoice.invoiceId) setPrintInvoiceIds([invoice.invoiceId]);
+        }}
+        printDisabled={!canPrintInvoices}
+        isPrinting={isPrintingInvoice}
+        onAddComment={addInvoiceComment}
       />
 
       <Dialog open={statusDialogOpen} onOpenChange={setStatusDialogOpen}>
@@ -953,6 +1139,7 @@ export function BarcodesWorkspace() {
         onOpenChange={(open) => {
           if (!open) {
             setEditInvoiceId(null);
+            setEditInvoiceNumber("");
             setEditInvoiceInitialStep(undefined);
             setEditInvoiceFocusBarcodeId(undefined);
           }
@@ -967,10 +1154,10 @@ export function BarcodesWorkspace() {
         >
           <DialogHeader className="hidden shrink-0 border-b border-border px-5 py-4 sm:block sm:px-6">
             <DialogTitle>
-              {selectedInvoiceTarget?.invoiceNumber
+              {editInvoiceNumber
                 ? t("invoices.workspace.editInvoiceNamed", {
                     number: formatInvoiceTabLabel(
-                      { invoiceNumber: selectedInvoiceTarget.invoiceNumber },
+                      { invoiceNumber: editInvoiceNumber },
                       t("invoices.workspace.untitledTab"),
                     ),
                   })
@@ -984,6 +1171,7 @@ export function BarcodesWorkspace() {
                 invoiceId={editInvoiceId}
                 onCancel={() => {
                   setEditInvoiceId(null);
+                  setEditInvoiceNumber("");
                   setEditInvoiceInitialStep(undefined);
                   setEditInvoiceFocusBarcodeId(undefined);
                 }}
@@ -995,6 +1183,46 @@ export function BarcodesWorkspace() {
           </div>
         </DialogContent>
       </Dialog>
+
+      <Dialog
+        open={deleteInvoiceTarget !== null}
+        onOpenChange={(open) => {
+          if (!open) setDeleteInvoiceTarget(null);
+        }}
+      >
+        <CompactActionDialogContent>
+          <CompactActionDialogHeader
+            icon={Trash2}
+            title={t("invoices.workspace.delete.titleOne")}
+            description={t("invoices.workspace.delete.descriptionOne", {
+              number: deleteInvoiceTarget?.invoiceNumber ?? "",
+              cannotBeUndone: t("common.dialogs.cannotBeUndone"),
+            })}
+          />
+          <CompactActionDialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setDeleteInvoiceTarget(null)}
+              disabled={isDeletingInvoice}
+            >
+              {t("common.actions.cancel")}
+            </Button>
+            <ConfirmDeleteButton
+              isPending={isDeletingInvoice}
+              onClick={() => void confirmDeleteInvoice()}
+            />
+          </CompactActionDialogFooter>
+        </CompactActionDialogContent>
+      </Dialog>
+
+      {printInvoiceIds.length > 0 ? (
+        <InvoicePrintSignaturesDialog
+          invoiceIds={printInvoiceIds}
+          onClose={() => setPrintInvoiceIds([])}
+        />
+      ) : null}
+
       {deliverBarcode && deliveryAccess.canDeliver ? (
         <DeliverDialog
           key={`${deliveryAccess.companyId}:${deliveryAccess.actorId}:${deliverBarcode.invoiceId}:${deliverBarcode.delivery?.id}`}

@@ -34,3 +34,11 @@ export async function manageInvoicePool(request: InvoicePoolAction) {
   assertMutationSuccess(response, "Unable to update reserved invoices");
   return z.array(reservedInvoiceSchema).parse(response.data);
 }
+
+export async function findHeldInvoiceNumber(deviceId: string) {
+  const response = await apiClient.get<{ success: boolean; data: unknown }>(
+    API_ENDPOINTS.MY_INVOICE_POOL, { params: { deviceId, limit: 1 } },
+  );
+  assertMutationSuccess(response, "Unable to recover invoice number");
+  return invoicePoolPageSchema.parse(response.data).items[0];
+}

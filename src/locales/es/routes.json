@@ -34,7 +34,7 @@
     "editTabLabel": "Editar {{name}}",
     "loading": "Cargando ruta diaria…",
     "notFound": "No se encontró esta ruta diaria.",
-    "description": "Defina la ruta de trabajo para esta fecha. Elija la sucursal, el vehículo y la cuadrilla de ruta, luego asigne un rol a cada miembro. Las sucursales RD también requieren contenedor y tasa de cambio.",
+    "description": "Defina la ruta de trabajo de hoy en dos pasos: sucursal y fecha, luego vehículo, cuadrilla y roles. Las sucursales RD también requieren contenedor y tasa de cambio.",
     "searchPlaceholder": "Buscar rutas diarias…",
     "searchNoun": "rutas diarias",
     "empty": "Aún no hay rutas diarias.",
@@ -44,6 +44,20 @@
     "entities": {
       "activeRoute": "ruta diaria",
       "activeRoutes": "rutas diarias"
+    },
+    "wizard": {
+      "navAriaLabel": "Pasos de la ruta diaria",
+      "progress": "{{current}} de {{total}}",
+      "goToStep": "Ir a {{label}}",
+      "continueToStep": "Continuar a {{step}}",
+      "steps": {
+        "branchAndDate": "Sucursal y fecha",
+        "vehicleAndRoles": "Vehículo y roles"
+      },
+      "hints": {
+        "branchAndDate": "Elija primero la sucursal y luego la fecha en que trabajarán este vehículo y equipo.",
+        "vehicleAndRoles": "Opcionalmente cargue una ruta diaria anterior o una cuadrilla, luego defina el vehículo y asigne chofer, supervisor y ayudantes."
+      }
     },
     "form": {
       "save": "Guardar ruta diaria",
@@ -58,7 +72,7 @@
       "previousRoute": "Ruta diaria anterior",
       "assignment": "Asignación",
       "design": {
-        "loadFrom": "Opcional: copia una ruta diaria anterior o carga una cuadrilla de ruta para completar los campos y luego confirma la asignación y las funciones.",
+        "loadFrom": "Opcional: copie una ruta diaria anterior o cargue una cuadrilla de ruta para completar los campos y luego confirme el vehículo y los roles.",
         "assignment": "Elige primero la sucursal para ver sus vehículos y cuadrillas, luego indica la fecha y el vehículo que trabajará.",
         "date": "Elige el día en que trabajarán este vehículo y equipo.",
         "branch": "Elige primero la sucursal para ver los vehículos y equipos disponibles.",

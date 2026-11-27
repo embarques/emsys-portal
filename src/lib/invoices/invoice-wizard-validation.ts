@@ -42,12 +42,27 @@ export function findInvoiceWizardStep1Issue(
   values: InvoiceFormValues,
   t: Translate,
 ): InvoiceWizardIssue | null {
-  // Match step-1 visual order: number → date → container → payment location → responsible party.
+  // Match step-1 visual order: number → responsible party → date → container → payment location.
   if (!values.autoGenerateNumber && !values.invoiceNumber.trim()) {
     return {
       step: 1,
       fieldId: INVOICE_WIZARD_FIELDS.invoiceNumber,
       message: t("invoices.wizard.validation.invoiceNumberRequired"),
+    };
+  }
+  if (values.pickupSource === "route") {
+    if (!values.routeId) {
+      return {
+        step: 1,
+        fieldId: INVOICE_WIZARD_FIELDS.routeId,
+        message: t("invoices.wizard.validation.pickupRouteRequired"),
+      };
+    }
+  } else if (isInvoiceEmployeePickupSource(values.pickupSource) && !values.pickupEmployeeId) {
+    return {
+      step: 1,
+      fieldId: INVOICE_WIZARD_FIELDS.pickupEmployeeId,
+      message: t("invoices.wizard.validation.supervisorEmployeeRequired"),
     };
   }
   if (!values.date.trim()) {
@@ -65,21 +80,6 @@ export function findInvoiceWizardStep1Issue(
       step: 1,
       fieldId: INVOICE_WIZARD_FIELDS.paymentLocation,
       message: t("invoices.wizard.validation.paymentLocationRequired"),
-    };
-  }
-  if (values.pickupSource === "route") {
-    if (!values.routeId) {
-      return {
-        step: 1,
-        fieldId: INVOICE_WIZARD_FIELDS.routeId,
-        message: t("invoices.wizard.validation.pickupRouteRequired"),
-      };
-    }
-  } else if (isInvoiceEmployeePickupSource(values.pickupSource) && !values.pickupEmployeeId) {
-    return {
-      step: 1,
-      fieldId: INVOICE_WIZARD_FIELDS.pickupEmployeeId,
-      message: t("invoices.wizard.validation.supervisorEmployeeRequired"),
     };
   }
   return null;

@@ -371,7 +371,7 @@ export function InvoiceViewSheet({
               )}
               <RecordViewSheetDetailRow
                 label={t("invoices.view.fields.paymentLocation")}
-                value={getPaymentLocationLabel(invoice.paymentLocation)}
+                value={invoice.paymentBranchName || getPaymentLocationLabel(invoice.paymentLocation)}
               />
               <RecordViewSheetDetailRow
                 label={t("invoices.form.fields.pickupReference")}

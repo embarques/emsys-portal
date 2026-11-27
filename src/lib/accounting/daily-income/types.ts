@@ -331,6 +331,7 @@ export type DailyIncomeJournalValues = {
   invoiceNumber?: string;
   /** Merchandise responsibility for a new invoice; independent of this journal's collector. */
   invoiceResponsibility?: { employee?: AccountingLookup; dailyRouteId?: string };
+  invoiceReservation?: import("@/lib/invoices/types").InvoiceReservationProof;
   autoGenerateInvoiceNumber?: boolean;
   invoiceCost?: number;
   invoiceDiscount?: number;

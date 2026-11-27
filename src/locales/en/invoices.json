@@ -231,6 +231,7 @@
       "receiver": "Receiver",
       "pickupReference": "Pickup Reference",
       "pickupReceiver": "Receiver from this pickup",
+      "responsiblePartyTitle": "Responsible party",
       "responsibleParty": "Who is responsible for picking up the items in this invoice?",
       "pickupSource": "Received via",
       "pickupSourceCreator": "Me",
@@ -260,6 +261,7 @@
       "selectPickupRoute": "Select daily route",
       "noPickupRoute": "No daily route",
       "searchPickupRoutes": "Search daily routes…",
+      "paymentLocationsUnavailable": "Could not load payment branches.",
       "selectPaymentLocation": "Select branch",
       "searchPaymentLocations": "Search branches…",
       "selectWarehouseEmployee": "Select warehouse employee",
@@ -340,6 +342,7 @@
       "modeSystem": "System generated",
       "modeCustom": "Enter your own",
       "customLabel": "Custom invoice number",
+      "onContinue": "Reserved on the next step",
       "assignedOnSave": "Assigned when saved",
       "hint": "EMSYS will generate an invoice number from your company’s range when you save."
     }

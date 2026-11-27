@@ -331,7 +331,7 @@ export function invoiceMatchesQuery(invoice: Invoice, query: string): boolean {
     invoice.invoiceId,
     invoice.invoiceNumber,
     invoice.date,
-    getPaymentLocationLabel(invoice.paymentLocation),
+    invoice.paymentBranchName || getPaymentLocationLabel(invoice.paymentLocation),
     getInvoicePaidStatusLabel(resolveInvoicePaidStatus(invoice)),
     getContainerLabelForInvoice(invoice),
     formatInvoicePartySummary(invoice.sender),

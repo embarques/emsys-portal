@@ -21,6 +21,6 @@ export const invoicePoolPageSchema = z.object({
   lowThreshold: z.number().int().nonnegative(), nextCursor: z.string().optional(),
 });
 export type InvoicePoolAction = {
-  requestId: string; action: "generate" | "assign" | "return";
-  count?: number; userId?: number; items?: { id: string; token: string }[];
+  requestId: string; action: "generate" | "assign" | "return" | "reserve-draft" | "release-draft";
+  deviceId?: string; count?: number; userId?: number; items?: { id: string; token: string }[];
 };

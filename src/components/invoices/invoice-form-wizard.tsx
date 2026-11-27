@@ -8,6 +8,8 @@ import { useForm, useWatch } from "react-hook-form";
 import { InvoiceDocumentsSection } from "@/components/invoices/invoice-documents-section";
 import { InvoiceDocumentPicker } from "@/components/invoices/invoice-document-picker";
 import { useInvoiceDocumentDraft } from "@/lib/invoices/hooks/use-invoice-document-draft";
+import { formatFormMutationError } from "@/lib/errors";
+import { useInvoiceDraftNumber } from "@/lib/invoices/hooks/use-invoice-draft-number";
 import { InvoiceForm } from "@/components/invoices/invoice-form";
 import { InvoiceDailyIncomeStep } from "@/components/invoices/invoice-daily-income-step";
 import type { InvoicePaymentDraft } from "@/lib/invoices/invoice-daily-income-context";
@@ -121,6 +123,7 @@ type Props = {
   onSaved?: () => void;
   onPrint?: (values: InvoiceFormValues, savedInvoiceId?: string | null) => Promise<string | null>;
   isPrinting?: boolean;
+  cancelDraftRef?: React.RefObject<(() => void) | null>;
   onCancel: () => void;
   /** `canCreateAssignedInvoice` flow: details read-only, appointment parties only. */
   assignedMode?: boolean;
@@ -152,10 +155,14 @@ export function InvoiceFormWizard({
   onPrint,
   isPrinting = false,
   onCancel,
+  cancelDraftRef,
   assignedMode = false,
 }: Props) {
   const { t } = useTranslation();
   const { hasPermission } = useAuth();
+  const numbering = useInvoiceDraftNumber();
+  const numberingBusy = useRef(false);
+  const numberPending = numbering.reserve.isPending || numbering.release.isPending;
   const canUseManualNumber = hasPermission(
     PERMISSIONS.invoicesManualNumber.name,
     PERMISSIONS.invoicesManualNumber.resourceType,
@@ -183,7 +190,6 @@ export function InvoiceFormWizard({
   );
   const [values, setValues] = useState<InvoiceFormValues>(() => {
     const base = initialValues ?? createEmptyInvoiceForm();
-    // Manual entry is the default; only force system numbering without permission.
     return canUseManualNumber ? base : { ...base, autoGenerateNumber: true };
   });
   const documentDraft = useInvoiceDocumentDraft();
@@ -305,6 +311,10 @@ export function InvoiceFormWizard({
       const merged = {
         ...next,
         ...(!canUseManualNumber ? { autoGenerateNumber: true } : {}),
+        ...(current.generatedInvoiceNumber ? {
+          generatedInvoiceNumber: current.generatedInvoiceNumber, invoiceNumber: current.invoiceNumber,
+          reservation: current.reservation, autoGenerateNumber: true,
+        } : {}),
         discount: current.discount,
         amountPaid: current.amountPaid,
       };
@@ -327,6 +337,7 @@ export function InvoiceFormWizard({
           ? {
               invoiceNumber: context.registration.invoice.number,
               generatedInvoiceNumber: context.registration.invoice.number,
+              reservation: undefined,
             }
           : {}),
         amountPaid: String(context.registration?.amount ?? 0),
@@ -394,6 +405,56 @@ export function InvoiceFormWizard({
     return findStepIssue(step, currentValues, dailyIncome);
   }
 
+  async function enterStep(target: InvoiceWizardStep) {
+    if (numberingBusy.current) return;
+    const draft = valuesRef.current;
+    if (target <= 1 || isEditing || !draft.autoGenerateNumber || draft.generatedInvoiceNumber) {
+      setStep(target);
+      return;
+    }
+    numberingBusy.current = true;
+    try {
+      const held = await numbering.reserve.mutateAsync();
+      const next = { ...valuesRef.current, ...held };
+      valuesRef.current = next;
+      setValues(next);
+      setStep(target);
+    } catch (error) {
+      setStep(1);
+      setStepError(formatFormMutationError(error, t));
+    } finally {
+      numberingBusy.current = false;
+    }
+  }
+
+  async function discardDraft() {
+    if (numberingBusy.current || savingRef.current || paymentSubmitting) return;
+    numberingBusy.current = true;
+    try {
+      let proof = valuesRef.current.reservation;
+      if (!proof && !valuesRef.current.generatedInvoiceNumber && numbering.hasDraft()) {
+        // A timed-out reservation may already have committed. Recover it before discard.
+        proof = (await numbering.reserve.mutateAsync()).reservation;
+      }
+      if (proof && !savedInvoiceId) await numbering.release.mutateAsync(proof);
+      else numbering.finish();
+    } catch (error) {
+      const message = formatFormMutationError(error, t);
+      setStepError(message);
+      setSubmitError(message);
+      return;
+    } finally {
+      numberingBusy.current = false;
+    }
+    onCancel();
+  }
+
+  useEffect(() => {
+    if (!cancelDraftRef) return;
+    cancelDraftRef.current = discardDraft;
+    return () => { cancelDraftRef.current = null; };
+  });
+
   async function handleNext() {
     const submitPayment = paymentStepId != null && step === paymentStepId ? paymentSubmitRef.current : null;
     if (!submitPayment) {
@@ -435,7 +496,7 @@ export function InvoiceFormWizard({
     if (requireDailyIncomeRegistration && step === 3) {
       setDailyIncomeContext(emptyInvoiceDailyIncomeContext());
     }
-    setStep((current) => (current + 1) as InvoiceWizardStep);
+    void enterStep((step + 1) as InvoiceWizardStep);
   }
 
   function handleBack() {
@@ -478,7 +539,7 @@ export function InvoiceFormWizard({
     if (requireDailyIncomeRegistration && target === paymentStepId && step < target) {
       setDailyIncomeContext(emptyInvoiceDailyIncomeContext());
     }
-    setStep(target);
+    void enterStep(target);
   }
 
   async function handlePrint() {
@@ -562,6 +623,7 @@ export function InvoiceFormWizard({
   }
 
   function finishSave() {
+    if (values.generatedInvoiceNumber) numbering.finish();
     setDocumentsBusy(false);
     documentDraft.reset();
     setPendingUploadFiles(null);
@@ -581,10 +643,11 @@ export function InvoiceFormWizard({
     const resumeStep = (markedEntry?.id ?? 1) as InvoiceWizardStep;
     const batchStartKind = markedEntry ? toInvoiceBatchContinueStep(markedEntry.kind) : null;
 
-    setStep(resumeStep);
+    setStep(1);
     const nextValues = resetInvoiceFormForNextEntry(values, { batchStartKind });
     setValues(nextValues);
     valuesRef.current = nextValues;
+    if (resumeStep > 1) void enterStep(resumeStep);
     setFormSessionKey((key) => key + 1);
     setSavedInvoiceId(null);
     setDailyIncomeContext(emptyInvoiceDailyIncomeContext());
@@ -705,32 +768,39 @@ export function InvoiceFormWizard({
   const stepLabelKey = getInvoiceWizardStepLabelKey(stepKind);
 
   const formStep = (
-    <InvoiceForm
-      key={`invoice-wizard-form-${formSessionKey}`}
-      appearance={isMobileLayout ? "phoneWizard" : "wizard"}
-      isEditing={isEditing}
-      wizardStep={(step <= 3 ? step : 3) as InvoiceWizardFormStep}
-      wizardTotalSteps={previewStep}
-      showFooter={false}
-      initialValues={values}
-      submitLabel={submitLabel}
-      onSubmit={() => ({ error: null })}
-      onValuesChange={handleValuesChange}
-      onContinue={handleNext}
-      onCancel={onCancel}
-      focusFieldId={focusFieldId}
-      focusFieldKey={focusFieldKey}
-      requestEditLineItemId={step === 3 ? requestEditLineItemId : null}
-      defaultToLatestContainer={!isEditing}
-      assignedMode={assignedMode}
-      showPaymentLocation
-    />
+    <>
+      {step === 2 && !isEditing && (
+        <p className="shrink-0 border-b px-4 py-2 text-sm font-medium" role="status">
+          {t("invoices.form.fields.invoiceNumber")} <strong>{values.invoiceNumber}</strong>
+        </p>
+      )}
+      <InvoiceForm
+        key={`invoice-wizard-form-${formSessionKey}-${values.generatedInvoiceNumber ?? ""}`}
+        appearance={isMobileLayout ? "phoneWizard" : "wizard"}
+        isEditing={isEditing}
+        wizardStep={(step <= 3 ? step : 3) as InvoiceWizardFormStep}
+        wizardTotalSteps={previewStep}
+        showFooter={false}
+        initialValues={values}
+        submitLabel={submitLabel}
+        onSubmit={() => ({ error: null })}
+        onValuesChange={handleValuesChange}
+        onContinue={handleNext}
+        onCancel={discardDraft}
+        focusFieldId={focusFieldId}
+        focusFieldKey={focusFieldKey}
+        requestEditLineItemId={step === 3 ? requestEditLineItemId : null}
+        defaultToLatestContainer={!isEditing}
+        assignedMode={assignedMode}
+        showPaymentLocation
+      />
+    </>
   );
 
   const handlePaymentLocationChange = useCallback(
-    (paymentLocation: InvoiceFormValues["paymentLocation"]) => {
+    (paymentLocation: InvoiceFormValues["paymentLocation"], paymentBranchName?: string) => {
       setValues((current) => {
-        const next = { ...current, paymentLocation };
+        const next = { ...current, paymentLocation, paymentBranchName };
         valuesRef.current = next;
         return next;
       });
@@ -930,7 +1000,7 @@ export function InvoiceFormWizard({
         type="button"
         variant="outline"
         className="h-12 rounded-xl px-4 text-base"
-        onClick={step > 1 ? handleBack : onCancel}
+        onClick={step > 1 ? handleBack : discardDraft}
       >
         {step > 1 ? <ArrowLeft className="size-4" /> : null}
         {phoneBackLabel}
@@ -940,6 +1010,8 @@ export function InvoiceFormWizard({
     return (
       <div
         ref={wizardRef}
+        inert={numberPending}
+        aria-busy={numberPending}
         data-testid="invoice-form-wizard"
         className={cn(
           "flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-background",
@@ -982,7 +1054,7 @@ export function InvoiceFormWizard({
                 type="button"
                 variant="ghost"
                 className="h-8 px-2 text-sm font-semibold text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground"
-                onClick={onCancel}
+                onClick={discardDraft}
               >
                 {t("common.actions.cancel")}
               </Button>
@@ -1040,6 +1112,8 @@ export function InvoiceFormWizard({
   return (
     <div
       ref={wizardRef}
+      inert={numberPending}
+      aria-busy={numberPending}
       data-testid="invoice-form-wizard"
       className={cn("flex min-h-0 flex-1 flex-col", invoiceWizardTypographyRoot)}
     >
@@ -1061,6 +1135,7 @@ export function InvoiceFormWizard({
                 "flex min-h-0 flex-1 flex-col overflow-hidden",
                 step > 3 && "pointer-events-none invisible absolute inset-0",
               )}
+              inert={step > 3}
               aria-hidden={step > 3}
             >
               {formStep}
@@ -1107,7 +1182,7 @@ export function InvoiceFormWizard({
           </div>
 
           <div className="flex shrink-0 items-center gap-2">
-            <Button type="button" variant="outline" className="max-sm:px-3" onClick={onCancel}>
+            <Button type="button" variant="outline" className="max-sm:px-3" onClick={discardDraft}>
               {t("common.actions.cancel")}
             </Button>
             {nextOrSaveButton}

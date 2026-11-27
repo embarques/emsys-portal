@@ -20,6 +20,7 @@ export const USER_ACTIVITY_TABLE_FILTER_FIELDS: TableFilterFieldDefinition[] = [
       { value: "common", label: "Common" },
       { value: "uncommon", label: "Uncommon" },
       { value: "rare", label: "Rare" },
+      { value: "severe", label: "Severe" },
     ],
   },
   {

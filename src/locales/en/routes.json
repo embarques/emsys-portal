@@ -34,7 +34,7 @@
     "editTabLabel": "Edit {{name}}",
     "loading": "Loading daily route…",
     "notFound": "This daily route could not be found.",
-    "description": "Set the working route for this date. Choose the branch, vehicle, and route crew, then assign a role to each crew member. RD branches also need a container and exchange rate.",
+    "description": "Set today’s working route in two steps: branch and date, then vehicle, crew, and roles. RD branches also need a container and exchange rate.",
     "searchPlaceholder": "Search daily routes…",
     "searchNoun": "daily routes",
     "empty": "No daily routes yet.",
@@ -44,6 +44,20 @@
     "entities": {
       "activeRoute": "daily route",
       "activeRoutes": "daily routes"
+    },
+    "wizard": {
+      "navAriaLabel": "Daily route steps",
+      "progress": "{{current}} of {{total}}",
+      "goToStep": "Go to {{label}}",
+      "continueToStep": "Continue to {{step}}",
+      "steps": {
+        "branchAndDate": "Branch and date",
+        "vehicleAndRoles": "Vehicle and roles"
+      },
+      "hints": {
+        "branchAndDate": "Choose the branch first, then the date this vehicle and crew will operate.",
+        "vehicleAndRoles": "Optionally load a previous daily route or route crew, then set the vehicle and assign driver, supervisor, and helper roles."
+      }
     },
     "form": {
       "save": "Save daily route",
@@ -58,7 +72,7 @@
       "previousRoute": "Previous daily route",
       "assignment": "Assignment",
       "design": {
-        "loadFrom": "Optional: copy a previous daily route or load a route crew to fill in the fields, then confirm the assignment and roles.",
+        "loadFrom": "Optional: copy a previous daily route or load a route crew to fill in the fields, then confirm the vehicle and roles.",
         "assignment": "Choose the branch first to see its vehicles and crews, then set the date and the vehicle that will operate.",
         "date": "Choose the day this vehicle and crew will operate.",
         "branch": "Choose the branch first to see the available vehicles and crews.",
