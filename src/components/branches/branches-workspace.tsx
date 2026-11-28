@@ -7,7 +7,7 @@ import {
   Save,
 } from "lucide-react";
 
-import { BranchForm } from "@/components/branches/branch-form";
+import { BranchFormWizard } from "@/components/branches/branch-form-wizard";
 import { BranchViewSheet } from "@/components/branches/branch-view-sheet";
 import { DataTable } from "@/components/app-shell/data-table";
 import { TablePaginationControls } from "@/components/app-shell/table-pagination-controls";
@@ -534,14 +534,14 @@ export function BranchesWorkspace() {
         <CompactActionDialogContent
           className={cn(
             compactActionDialogFormClassName,
-            "max-h-[calc(100dvh-2rem)] w-[calc(100vw-2rem)] sm:max-w-7xl",
+            "max-h-[calc(100dvh-2rem)] w-[calc(100vw-2rem)] sm:max-w-3xl",
           )}
         >
           <CompactActionDialogHeader
             icon={formMode === "edit" ? Save : Plus}
             title={formMode === "edit" ? t("branches.form.editTitle") : t("branches.form.addTitle")}
           />
-          <BranchForm
+          <BranchFormWizard
             key={editingBranch?.id ?? "new"}
             initialValues={
               formMode === "edit" && editingBranch
@@ -552,6 +552,8 @@ export function BranchesWorkspace() {
             submitLabel={formMode === "edit" ? t("common.actions.saveChanges") : t("branches.actions.add")}
             isSubmitting={isSaving}
             externalError={formError}
+            presentation="dialog"
+            appearance="phone"
             onSubmit={saveBranch}
             onCancel={() => {
               setFormMode(null);

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   ArrowLeft,
   ArrowRight,
@@ -161,7 +161,7 @@ export function ActiveRouteForm({
   const footerError = stepError || externalError;
 
   const wizardSteps = [
-    { id: 1, label: t("routes.dailyRoutes.wizard.steps.branchAndDate") },
+    { id: 1, label: t("routes.dailyRoutes.wizard.steps.dateAndConfiguration") },
     { id: 2, label: t("routes.dailyRoutes.wizard.steps.vehicleAndRoles") },
   ];
 
@@ -172,6 +172,20 @@ export function ActiveRouteForm({
     }, 0);
     return () => window.clearTimeout(timer);
   }, [step]);
+
+  const loadedConfigurationKey = `${previousRouteId.trim()}|${values.routeRecordId.trim()}`;
+  const previousLoadedConfigurationKeyRef = useRef(loadedConfigurationKey);
+
+  useEffect(() => {
+    const previousKey = previousLoadedConfigurationKeyRef.current;
+    previousLoadedConfigurationKeyRef.current = loadedConfigurationKey;
+    if (step !== 1) return;
+    if (!loadedConfigurationKey.replace("|", "").trim()) return;
+    if (loadedConfigurationKey === previousKey) return;
+    if (!(values.branch.id > 0) || !branchCode.trim() || !values.date.trim()) return;
+    setStepError(null);
+    setStep(2);
+  }, [branchCode, loadedConfigurationKey, step, values.branch.id, values.date]);
 
   const resetFieldsButton = onResetFields ? (
     <Button
@@ -214,6 +228,20 @@ export function ActiveRouteForm({
     onSubmit();
   }
 
+  const stepHeading =
+    step === 1
+      ? t("routes.dailyRoutes.wizard.steps.dateAndConfiguration")
+      : t("routes.dailyRoutes.wizard.steps.vehicleAndRoles");
+
+  const stepHint =
+    step === 1
+      ? t("routes.dailyRoutes.wizard.hints.dateAndConfiguration")
+      : t("routes.dailyRoutes.wizard.hints.vehicleAndRoles");
+
+  const continueLabel = t("routes.dailyRoutes.wizard.continueToStep", {
+    step: t("routes.dailyRoutes.wizard.steps.vehicleAndRoles"),
+  });
+
   return (
     <form
       onSubmit={handleSubmit}
@@ -236,9 +264,9 @@ export function ActiveRouteForm({
       <FormBody
         workflow
         isBusy={isSubmitting}
-        className="[&_[data-form-section]>div>div>h3]:normal-case [&_[data-form-section]>div>div>h3]:tracking-normal [&_[data-form-section]>div>div>h3]:text-sm [&_[data-form-section]_label]:text-sm [&_[data-form-section]_label]:text-foreground lg:p-8"
+        className="bg-muted/60 [&_[data-form-section]>div>div>h3]:normal-case [&_[data-form-section]>div>div>h3]:tracking-normal [&_[data-form-section]>div>div>h3]:text-sm [&_[data-form-section]_label]:text-sm [&_[data-form-section]_label]:text-foreground lg:p-8"
       >
-        <header className="max-w-2xl space-y-2">
+        <header className="max-w-2xl space-y-2 rounded-xl border border-border bg-card px-5 py-4 shadow-sm">
           <div className={cn("flex min-w-0 items-center gap-1", step > 1 && "-ml-2")}>
             {step > 1 ? (
               <Button
@@ -247,7 +275,7 @@ export function ActiveRouteForm({
                 size="icon"
                 aria-label={t("common.actions.previous")}
                 disabled={isSubmitting}
-                onClick={() => setStep(1)}
+                onClick={() => setStep((step - 1) as DailyRouteFormStep)}
               >
                 <ArrowLeft className="size-4" />
               </Button>
@@ -258,55 +286,50 @@ export function ActiveRouteForm({
               tabIndex={-1}
               className="text-2xl font-semibold tracking-tight outline-none"
             >
-              {step === 1
-                ? t("routes.dailyRoutes.wizard.steps.branchAndDate")
-                : t("routes.dailyRoutes.wizard.steps.vehicleAndRoles")}
+              {stepHeading}
             </h2>
           </div>
-          <p className="text-sm leading-relaxed text-muted-foreground">
-            {step === 1
-              ? t("routes.dailyRoutes.wizard.hints.branchAndDate")
-              : t("routes.dailyRoutes.wizard.hints.vehicleAndRoles")}
-          </p>
+          <p className="text-sm leading-relaxed text-muted-foreground">{stepHint}</p>
         </header>
 
         {step === 1 ? (
-          <div className="grid max-w-3xl items-start gap-4 @2xl:grid-cols-2">
-            <RouteFormField htmlFor="active-route-branch" icon={Building2} label={t("routes.activeRoute.branch")} required>
-              <SearchableSelect
-                id="active-route-branch"
-                aria-label={t("routes.activeRoute.branch")}
-                value={branchCode}
-                onValueChange={(value) => {
-                  setStepError(null);
-                  onBranchChange(value);
-                }}
-                placeholder={t("routes.activeRoute.branchPlaceholder")}
-                searchPlaceholder={t("routes.activeRoute.branchSearch")}
-                loading={branchesLoading}
-                loadingMessage={t("common.loading")}
-                options={branchOptions}
-              />
-            </RouteFormField>
+          <div className="grid max-w-3xl items-start gap-5">
+            <FormSection variant="card">
+              <div className="grid items-start gap-4 @2xl:grid-cols-2">
+                <RouteFormField htmlFor="active-route-branch" icon={Building2} label={t("routes.activeRoute.branch")} required>
+                  <SearchableSelect
+                    id="active-route-branch"
+                    aria-label={t("routes.activeRoute.branch")}
+                    value={branchCode}
+                    onValueChange={(value) => {
+                      setStepError(null);
+                      onBranchChange(value);
+                    }}
+                    placeholder={t("routes.activeRoute.branchPlaceholder")}
+                    searchPlaceholder={t("routes.activeRoute.branchSearch")}
+                    loading={branchesLoading}
+                    loadingMessage={t("common.loading")}
+                    options={branchOptions}
+                  />
+                </RouteFormField>
 
-            <RouteFormField htmlFor="active-route-date" icon={CalendarRange} label={t("routes.activeRoute.date")} required>
-              <DateInput
-                id="active-route-date"
-                aria-label={t("routes.activeRoute.date")}
-                value={values.date}
-                onChange={(event) => {
-                  setStepError(null);
-                  onDateChange(event.target.value);
-                }}
-                required
-              />
-            </RouteFormField>
-          </div>
-        ) : (
-          <div className="grid items-start gap-5 @4xl:grid-cols-2">
+                <RouteFormField htmlFor="active-route-date" icon={CalendarRange} label={t("routes.activeRoute.date")} required>
+                  <DateInput
+                    id="active-route-date"
+                    aria-label={t("routes.activeRoute.date")}
+                    value={values.date}
+                    onChange={(event) => {
+                      setStepError(null);
+                      onDateChange(event.target.value);
+                    }}
+                    required
+                  />
+                </RouteFormField>
+              </div>
+            </FormSection>
+
             <FormSection
-              variant="plain"
-              className="@4xl:col-span-2"
+              variant="card"
               description={t("routes.dailyRoutes.form.design.loadFrom")}
               icon={History}
               title={t("routes.dailyRoutes.form.loadFrom")}
@@ -375,9 +398,13 @@ export function ActiveRouteForm({
                 </RouteFormField>
               </div>
             </FormSection>
+          </div>
+        ) : null}
 
+        {step === 2 ? (
+          <div className="grid items-start gap-5 @4xl:grid-cols-2">
             <FormSection
-              variant="plain"
+              variant="card"
               className="@4xl:col-span-2"
               icon={Car}
               title={t("routes.activeRoute.vehicle")}
@@ -416,7 +443,7 @@ export function ActiveRouteForm({
             </FormSection>
 
             <FormSection
-              variant="plain"
+              variant="card"
               className="@4xl:col-span-2"
               description={t("routes.dailyRoutes.form.design.roles")}
               icon={Users}
@@ -448,7 +475,7 @@ export function ActiveRouteForm({
 
             {isDeliveryBranch ? (
               <div className="grid items-stretch gap-5 @4xl:col-span-2 @4xl:grid-cols-2">
-                <FormSection variant="plain" className="h-full" icon={Container} title={t("routes.activeRoute.container")} required>
+                <FormSection variant="card" className="h-full" icon={Container} title={t("routes.activeRoute.container")} required>
                   <SearchableSelect
                     id="active-route-container"
                     aria-label={t("routes.activeRoute.container")}
@@ -461,7 +488,7 @@ export function ActiveRouteForm({
                   />
                 </FormSection>
 
-                <FormSection variant="plain" className="h-full" icon={DollarSign} title={t("routes.activeRoute.rate")}>
+                <FormSection variant="card" className="h-full" icon={DollarSign} title={t("routes.activeRoute.rate")}>
                   <div className="space-y-1.5">
                     <Input
                       id="active-route-rate"
@@ -483,7 +510,7 @@ export function ActiveRouteForm({
             ) : null}
 
             {isEditing && !isDeliveryBranch && vehicleRouteId ? (
-              <FormSection variant="plain" className="@4xl:col-span-2" icon={Package} title={t("routes.pickupRoutes.view.sections.orders")}>
+              <FormSection variant="card" className="@4xl:col-span-2" icon={Package} title={t("routes.pickupRoutes.view.sections.orders")}>
                 <PickupRouteOrdersSection routeId={vehicleRouteId} editable />
               </FormSection>
             ) : null}
@@ -494,7 +521,7 @@ export function ActiveRouteForm({
               </p>
             ) : null}
           </div>
-        )}
+        ) : null}
       </FormBody>
 
       <div className="sticky bottom-0 z-10 shrink-0 space-y-3 border-t border-border bg-card px-5 py-3">
@@ -518,13 +545,7 @@ export function ActiveRouteForm({
             ) : (
               <ArrowRight className="size-4" />
             )}
-            {isSubmitting
-              ? t("common.actions.saving")
-              : isFinalStep
-                ? submitLabel
-                : t("routes.dailyRoutes.wizard.continueToStep", {
-                    step: t("routes.dailyRoutes.wizard.steps.vehicleAndRoles"),
-                  })}
+            {isSubmitting ? t("common.actions.saving") : isFinalStep ? submitLabel : continueLabel}
           </Button>
         </div>
       </div>

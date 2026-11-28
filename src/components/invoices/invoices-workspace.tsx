@@ -41,6 +41,7 @@ import { DirectoryTableLoader } from "@/components/app-shell/directory-table-loa
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { ConfirmDeleteButton } from "@/components/app-shell/confirm-delete-button";
 import { PageHeader } from "@/components/app-shell/page-header";
+import { InvoicePoliciesButton } from "@/components/invoices/invoice-policies-button";
 import { ReservedInvoicesButton } from "@/components/invoices/reserved-invoices-button";
 
 import { TableSelectionToolbar } from "@/components/app-shell/table-selection-toolbar";
@@ -1127,6 +1128,7 @@ export function InvoicesWorkspace() {
           description={t("invoices.pages.description")}
           actions={
             <div className="flex flex-wrap items-center gap-2">
+              <InvoicePoliciesButton />
               <ReservedInvoicesButton />
               <DirectoryInsightsToggle
                 open={insightsOpen}

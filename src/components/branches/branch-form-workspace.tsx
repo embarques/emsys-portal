@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
 
-import { BranchForm } from "@/components/branches/branch-form";
+import { BranchFormWizard } from "@/components/branches/branch-form-wizard";
 import { FormTabShell } from "@/components/forms/form-tab-shell";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { Button } from "@/components/ui/button";
@@ -104,13 +104,14 @@ export function BranchFormWorkspace({ tabId, mode, entityId }: WorkspaceFormHost
       title={isEditing ? t("branches.form.editTitle") : t("branches.form.addTitle")}
       description={isEditing && editing ? editing.name : t("branches.form.addDescription")}
     >
-      <BranchForm
+      <BranchFormWizard
         key={isEditing ? (editing?.id ?? "edit") : `new-${formInstance}`}
         initialValues={isEditing && editing ? branchToFormValues(editing) : createEmptyBranchForm()}
         isEditing={isEditing}
         submitLabel={isEditing ? t("common.actions.saveChanges") : t("branches.actions.add")}
         isSubmitting={isSaving}
         externalError={formError}
+        presentation="tab"
         onSubmit={save}
         onCancel={() => closeFormTabAndReturn(tabId)}
       />

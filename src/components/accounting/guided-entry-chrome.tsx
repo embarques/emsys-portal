@@ -28,13 +28,14 @@ export function typeStepCountsInStepper(typeStep?: GuidedTypeStep | null): boole
   return Boolean(typeStep && typeStep.includeInStepper !== false);
 }
 
-export function GuidedEntryStepper({ typeStep, labels, step, busy, onStepChange }: {
+export function GuidedEntryStepper({ typeStep, labels, step, busy, onStepChange, appearance }: {
   typeStep?: GuidedTypeStep;
   labels: string[];
   /** 1-based step within `labels`. */
   step: number;
   busy: boolean;
   onStepChange: (step: number) => void;
+  appearance?: "default" | "phone";
 }) {
   const includeType = typeStepCountsInStepper(typeStep);
   const offset = includeType ? 1 : 0;
@@ -44,7 +45,7 @@ export function GuidedEntryStepper({ typeStep, labels, step, busy, onStepChange 
         step={step + offset}
         labels={includeType && typeStep ? [typeStep.label, ...labels] : labels}
         disabled={busy}
-        appearance={typeStep?.appearance}
+        appearance={appearance ?? typeStep?.appearance}
         onSelectStep={(next) => next <= offset ? typeStep?.onBack() : onStepChange(next - offset)}
       />
     </div>

@@ -231,7 +231,6 @@
       "receiver": "Receiver",
       "pickupReference": "Pickup Reference",
       "pickupReceiver": "Receiver from this pickup",
-      "responsiblePartyTitle": "Responsible party",
       "responsibleParty": "Who is responsible for picking up the items in this invoice?",
       "pickupSource": "Received via",
       "pickupSourceCreator": "Me",

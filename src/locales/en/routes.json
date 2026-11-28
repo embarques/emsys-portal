@@ -34,7 +34,7 @@
     "editTabLabel": "Edit {{name}}",
     "loading": "Loading daily route…",
     "notFound": "This daily route could not be found.",
-    "description": "Set today’s working route in two steps: branch and date, then vehicle, crew, and roles. RD branches also need a container and exchange rate.",
+    "description": "Set today’s working route in two steps: choose branch, date, and an optional configuration, then confirm vehicle, crew, and roles. RD branches also need a container and exchange rate.",
     "searchPlaceholder": "Search daily routes…",
     "searchNoun": "daily routes",
     "empty": "No daily routes yet.",
@@ -51,12 +51,12 @@
       "goToStep": "Go to {{label}}",
       "continueToStep": "Continue to {{step}}",
       "steps": {
-        "branchAndDate": "Branch and date",
+        "dateAndConfiguration": "Date and configuration",
         "vehicleAndRoles": "Vehicle and roles"
       },
       "hints": {
-        "branchAndDate": "Choose the branch first, then the date this vehicle and crew will operate.",
-        "vehicleAndRoles": "Optionally load a previous daily route or route crew, then set the vehicle and assign driver, supervisor, and helper roles."
+        "dateAndConfiguration": "Choose the branch and date, then optionally load a previous daily route or route crew. Selecting a configuration continues to vehicle and roles.",
+        "vehicleAndRoles": "Confirm or update the vehicle and assign driver, supervisor, and helper roles."
       }
     },
     "form": {
@@ -72,7 +72,7 @@
       "previousRoute": "Previous daily route",
       "assignment": "Assignment",
       "design": {
-        "loadFrom": "Optional: copy a previous daily route or load a route crew to fill in the fields, then confirm the vehicle and roles.",
+        "loadFrom": "Optional: copy a previous daily route or load a route crew. You can skip this and assign vehicle and roles manually on the next step.",
         "assignment": "Choose the branch first to see its vehicles and crews, then set the date and the vehicle that will operate.",
         "date": "Choose the day this vehicle and crew will operate.",
         "branch": "Choose the branch first to see the available vehicles and crews.",

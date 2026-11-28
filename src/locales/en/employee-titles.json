@@ -5,7 +5,7 @@
     "updateFailed": "Unable to update title.",
     "deleteFailed": "Unable to delete title."
   },
-  "title": "Employee titles",
+  "title": "Manage employee titles",
   "entity": "Title",
   "description": "Manage the titles available in employee forms.",
   "add": "New title",
@@ -44,5 +44,13 @@
     }
   },
   "searchPlaceholder": "Search titles…",
-  "entities": "titles"
+  "entities": "titles",
+  "view": {
+    "sections": {
+      "details": "Details",
+      "audit": "Audit"
+    },
+    "recordId": "Record ID",
+    "edit": "Edit title"
+  }
 }

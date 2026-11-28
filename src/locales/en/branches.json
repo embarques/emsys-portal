@@ -56,6 +56,20 @@
       "false": "No"
     }
   },
+  "wizard": {
+    "continueToReview": "Continue to review",
+    "continueToStep": "Continue to {{step}}",
+    "steps": {
+      "review": "Review"
+    },
+    "stepHints": {
+      "branch": "Set the branch name and document details.",
+      "address": "Search for the branch address or enter it manually.",
+      "contact": "Add phone numbers for this branch.",
+      "settings": "Set label, invoice, and storage options.",
+      "review": "Check the branch details below. Edit any section, then save."
+    }
+  },
   "form": {
     "defaultLabelStatusUnconfigured": "Not configured",
     "defaultLabelStatusHelp": "An administrator must configure a valid default label status in Branches → edit branch → Settings → Default label status before generating labels.",

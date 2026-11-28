@@ -56,6 +56,20 @@
       "false": "No"
     }
   },
+  "wizard": {
+    "continueToReview": "Continuar a revisión",
+    "continueToStep": "Continuar a {{step}}",
+    "steps": {
+      "review": "Revisión"
+    },
+    "stepHints": {
+      "branch": "Defina el nombre y los datos de los documentos.",
+      "address": "Busque la dirección de la sucursal o ingrésela manualmente.",
+      "contact": "Agregue los teléfonos de esta sucursal.",
+      "settings": "Configure etiquetas, facturas y archivos.",
+      "review": "Verifique los datos de la sucursal. Edite cualquier sección y guarde."
+    }
+  },
   "form": {
     "defaultLabelStatusUnconfigured": "Sin configurar",
     "defaultLabelStatusHelp": "Un administrador debe configurar un estado predeterminado de etiqueta válido en Sucursales → editar sucursal → Configuración → Estado predeterminado de etiqueta antes de generar etiquetas.",

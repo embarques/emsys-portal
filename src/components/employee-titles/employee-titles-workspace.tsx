@@ -1,11 +1,12 @@
 "use client";
-import { useMemo } from "react";
+
+import { useMemo, useState } from "react";
 import { formatAuditDateTime } from "@/lib/audit/display";
 import { Plus } from "lucide-react";
 import { EmployeeTitleDialog } from "@/components/employee-titles/employee-title-dialog";
+import { EmployeeTitleViewSheet } from "@/components/employee-titles/employee-title-view-sheet";
 import { CatalogBulkDeleteDialog } from "@/components/app-shell/catalog-bulk-delete-dialog";
 import { CatalogDataTable, CatalogTablePagination, CatalogTableToolbar } from "@/components/app-shell/catalog-table-toolbar";
-import { DirectoryTableRowActions } from "@/components/app-shell/directory-table-row-actions";
 import { PageHeader } from "@/components/app-shell/page-header";
 import { TableSelectionToolbar } from "@/components/app-shell/table-selection-toolbar";
 import { useColumnVisibility } from "@/components/app-shell/use-column-visibility";
@@ -39,6 +40,7 @@ export function EmployeeTitlesWorkspace() {
   const canUpdate = hasPermission(PERMISSIONS.employeeTitlesUpdate.name, PERMISSIONS.employeeTitlesUpdate.resourceType);
   const canDelete = hasPermission(PERMISSIONS.employeeTitlesDelete.name, PERMISSIONS.employeeTitlesDelete.resourceType);
   const state = useTitleWorkspace();
+  const [viewTitle, setViewTitle] = useState<EmployeeTitle | null>(null);
   const table = useCatalogTable({
     fields: NAMED_CATALOG_TABLE_FILTER_FIELDS,
     keyPrefix: "employeeTitles.filters.fields",
@@ -65,50 +67,83 @@ export function EmployeeTitlesWorkspace() {
   const columnLayout = useColumnVisibility("employee-titles-catalog-v1", columns);
   const { selectedIds, selectedRows } = table.selection;
 
-  return <div className="max-w-full overflow-x-hidden">
-    <PageHeader title={t("employeeTitles.title")} description={t("employeeTitles.description")} actions={
-      <PermissionGuard permission={PERMISSIONS.employeeTitlesCreate}>
-        <Button onClick={() => state.edit(null)}><Plus className="size-4" />{t("employeeTitles.add")}</Button>
-      </PermissionGuard>
-    } />
-    <Card className="mt-6 gap-0">
-      <CardHeader className="gap-3 border-b py-4 pb-3">
-        <CatalogTableToolbar state={table} presetScope="employee-titles" searchPlaceholder={t("employeeTitles.searchPlaceholder")} columnLayout={columnLayout} />
-      </CardHeader>
-      <TableSelectionToolbar
-        selectedIds={selectedIds}
-        pageRowIds={table.selection.pageRowIds}
-        totalCount={table.total}
-        onSelectedIdsChange={table.selection.setSelectedIds}
+  function openEdit(item: EmployeeTitle) {
+    setViewTitle(null);
+    state.edit(item);
+  }
+
+  return (
+    <div className="max-w-full overflow-x-hidden">
+      <PageHeader
+        title={t("employeeTitles.title")}
+        description={t("employeeTitles.description")}
+        actions={
+          <PermissionGuard permission={PERMISSIONS.employeeTitlesCreate}>
+            <Button onClick={() => state.edit(null)}>
+              <Plus className="size-4" />
+              {t("employeeTitles.add")}
+            </Button>
+          </PermissionGuard>
+        }
+      />
+      <Card className="mt-6 gap-0">
+        <CardHeader className="gap-3 border-b py-4 pb-3">
+          <CatalogTableToolbar
+            state={table}
+            presetScope="employee-titles"
+            searchPlaceholder={t("employeeTitles.searchPlaceholder")}
+            columnLayout={columnLayout}
+          />
+        </CardHeader>
+        <TableSelectionToolbar
+          selectedIds={selectedIds}
+          pageRowIds={table.selection.pageRowIds}
+          totalCount={table.total}
+          onSelectedIdsChange={table.selection.setSelectedIds}
+          canEdit={canUpdate}
+          canDelete={canDelete}
+          editDisabled={state.busy}
+          deleteDisabled={state.busy || bulkDelete.isPending}
+          onEdit={() => {
+            if (selectedRows[0]) openEdit(selectedRows[0]);
+          }}
+          onDelete={() => bulkDelete.request(selectedRows)}
+        />
+        <CatalogDataTable
+          state={table}
+          columns={columnLayout.columns}
+          columnLayout={columnLayout}
+          rowKey={titleRowId}
+          rowLabel={(item) => item.name}
+          emptyMessage={t("employeeTitles.empty")}
+          retryLabel={t("employeeTitles.retry")}
+          onRowClick={setViewTitle}
+          onRowDoubleClick={canUpdate ? openEdit : undefined}
+          activeRowId={viewTitle ? titleRowId(viewTitle) : undefined}
+        />
+        <CatalogTablePagination state={table} />
+      </Card>
+      <EmployeeTitleViewSheet
+        title={viewTitle}
+        open={Boolean(viewTitle)}
+        onOpenChange={(open) => {
+          if (!open) setViewTitle(null);
+        }}
+        onEdit={openEdit}
+        onDelete={(item) => {
+          setViewTitle(null);
+          bulkDelete.request([item]);
+        }}
         canEdit={canUpdate}
         canDelete={canDelete}
-        editDisabled={state.busy}
-        deleteDisabled={state.busy || bulkDelete.isPending}
-        onEdit={() => { if (selectedRows[0]) state.edit(selectedRows[0]); }}
-        onDelete={() => bulkDelete.request(selectedRows)}
       />
-      <CatalogDataTable
-        state={table}
-        columns={columnLayout.columns}
-        columnLayout={columnLayout}
-        rowKey={titleRowId}
-        rowLabel={(item) => item.name}
-        emptyMessage={t("employeeTitles.empty")}
-        retryLabel={t("employeeTitles.retry")}
-        onRowDoubleClick={canUpdate ? (item) => state.edit(item) : undefined}
-        renderSelectCellActions={(item) => (
-          <DirectoryTableRowActions
-            row={item}
-            onEdit={canUpdate ? (row) => state.edit(row) : undefined}
-            onDelete={canDelete ? (row) => void state.remove(row) : undefined}
-            editDisabled={state.busy}
-            deleteDisabled={state.busy}
-          />
-        )}
+      <EmployeeTitleDialog state={state} />
+      <CatalogBulkDeleteDialog
+        state={bulkDelete}
+        entity={t("employeeTitles.entity")}
+        entities={t("employeeTitles.entities")}
+        getName={(item) => item.name}
       />
-      <CatalogTablePagination state={table} />
-    </Card>
-    <EmployeeTitleDialog state={state} />
-    <CatalogBulkDeleteDialog state={bulkDelete} entity={t("employeeTitles.entity")} entities={t("employeeTitles.entities")} getName={(item) => item.name} />
-  </div>;
+    </div>
+  );
 }

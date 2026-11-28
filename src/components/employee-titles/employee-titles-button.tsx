@@ -16,7 +16,7 @@ export function EmployeeTitlesButton() {
     <PermissionGuard permission={PERMISSIONS.employeeTitlesView}>
       <Button type="button" variant="outline" onClick={() => openTab("/employee-titles")}>
         <Briefcase className="size-4" />
-        {t("navigation.items.employeeTitles")}
+        {t("employeeTitles.title")}
       </Button>
     </PermissionGuard>
   );

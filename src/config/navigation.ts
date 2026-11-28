@@ -121,6 +121,12 @@ const invoicesItem: NavigationItem = {
 /** Opened from Invoices; retained for workspace labels and colors. */
 export const invoiceNavigationItems: NavigationItem[] = [
   {
+    labelKey: "navigation.items.invoicePolicies",
+    href: "/invoice-policies",
+    icon: ScrollText,
+    permission: PERMISSIONS.invoicePoliciesList,
+  },
+  {
     labelKey: "navigation.items.reservedInvoices",
     href: "/invoices/reserved",
     icon: FileText,
@@ -418,12 +424,6 @@ export const navigationSections: NavigationSection[] = [
             href: "/settings",
             icon: Settings,
             permission: PERMISSIONS.accountSettingsView,
-          },
-          {
-            labelKey: "navigation.items.invoicePolicies",
-            href: "/invoice-policies",
-            icon: ScrollText,
-            permission: PERMISSIONS.invoicePoliciesList,
           },
           {
             labelKey: "navigation.items.users",

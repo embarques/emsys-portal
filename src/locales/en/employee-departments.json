@@ -5,7 +5,7 @@
     "updateFailed": "Unable to update department.",
     "deleteFailed": "Unable to delete department."
   },
-  "title": "Employee departments",
+  "title": "Manage employee departments",
   "entity": "Department",
   "description": "Manage the departments available in employee forms.",
   "add": "New department",
@@ -44,5 +44,13 @@
     }
   },
   "searchPlaceholder": "Search departments…",
-  "entities": "departments"
+  "entities": "departments",
+  "view": {
+    "sections": {
+      "details": "Details",
+      "audit": "Audit"
+    },
+    "recordId": "Record ID",
+    "edit": "Edit department"
+  }
 }

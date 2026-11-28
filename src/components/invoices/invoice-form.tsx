@@ -964,51 +964,48 @@ export function InvoiceForm({
   ) : (
     <>
       {renderField(
-        t("invoices.form.fields.responsiblePartyTitle"),
+        t("invoices.form.fields.responsibleParty"),
         undefined,
         true,
-        <div className="space-y-2">
-          <p id="invoice-pickup-source-question" className="text-sm text-muted-foreground">{t("invoices.form.fields.responsibleParty")}</p>
-          <ChoiceTiles<"creator" | "supervisor" | "route">
-            id="invoice-pickup-source"
-            aria-labelledby="invoice-pickup-source-question"
-            className="sm:grid-cols-3"
-            value={responsibilityChoice}
-            onValueChange={updatePickupSource}
-            options={[
-              {
-                value: "creator" as const,
-                label: t("invoices.form.fields.pickupSourceCreator"),
-                description: t("invoices.form.hints.pickupSourceCreator"),
-                icon: UserCheck,
-                iconClassName: "text-emerald-700",
-                iconBackgroundClassName: "bg-emerald-50 dark:bg-muted",
-              },
-              {
-                value: "supervisor" as const,
-                label: t("invoices.form.fields.pickupSourceSupervisor"),
-                description: t("invoices.form.hints.pickupSourceSupervisor"),
-                icon: UserRound,
-                iconClassName: "text-blue-600",
-                iconBackgroundClassName: "bg-blue-50 dark:bg-muted",
-                disabled: !responsibility.canAssign,
-              },
-              {
-                value: "route" as const,
-                label: t("invoices.form.fields.pickupSourceRoute"),
-                description: t("invoices.form.hints.pickupSourceRoute"),
-                icon: Route,
-                iconClassName: "text-indigo-700",
-                iconBackgroundClassName: "bg-indigo-50 dark:bg-muted",
-                disabled: !canChooseRoute,
-              },
-            ].filter((option) =>
-              option.value === "creator" ||
-              option.value === "supervisor" && responsibility.canAssign ||
-              option.value === "route" && canChooseRoute,
-            )}
-          />
-        </div>,
+        <ChoiceTiles<"creator" | "supervisor" | "route">
+          id="invoice-pickup-source"
+          aria-label={t("invoices.form.fields.responsibleParty")}
+          className="sm:grid-cols-3"
+          value={responsibilityChoice}
+          onValueChange={updatePickupSource}
+          options={[
+            {
+              value: "creator" as const,
+              label: t("invoices.form.fields.pickupSourceCreator"),
+              description: t("invoices.form.hints.pickupSourceCreator"),
+              icon: UserCheck,
+              iconClassName: "text-emerald-700",
+              iconBackgroundClassName: "bg-emerald-50 dark:bg-muted",
+            },
+            {
+              value: "supervisor" as const,
+              label: t("invoices.form.fields.pickupSourceSupervisor"),
+              description: t("invoices.form.hints.pickupSourceSupervisor"),
+              icon: UserRound,
+              iconClassName: "text-blue-600",
+              iconBackgroundClassName: "bg-blue-50 dark:bg-muted",
+              disabled: !responsibility.canAssign,
+            },
+            {
+              value: "route" as const,
+              label: t("invoices.form.fields.pickupSourceRoute"),
+              description: t("invoices.form.hints.pickupSourceRoute"),
+              icon: Route,
+              iconClassName: "text-indigo-700",
+              iconBackgroundClassName: "bg-indigo-50 dark:bg-muted",
+              disabled: !canChooseRoute,
+            },
+          ].filter((option) =>
+            option.value === "creator" ||
+            option.value === "supervisor" && responsibility.canAssign ||
+            option.value === "route" && canChooseRoute,
+          )}
+        />,
       )}
       {showRoutePicker
         ? renderField(

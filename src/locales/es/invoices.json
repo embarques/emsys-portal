@@ -231,7 +231,6 @@
       "receiver": "Destinatario",
       "pickupReference": "Referencia de recogida",
       "pickupReceiver": "Destinatario de esta recogida",
-      "responsiblePartyTitle": "Responsable",
       "responsibleParty": "¿Quién es responsable de recoger los artículos de esta factura?",
       "pickupSource": "Recibido vía",
       "pickupSourceCreator": "Yo",

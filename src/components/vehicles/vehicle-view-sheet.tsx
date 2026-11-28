@@ -2,7 +2,6 @@
 
 import { Car, Info } from "lucide-react";
 
-import { Badge } from "@/components/ui/badge";
 import {
   RecordViewSheet,
   RecordViewSheetActions,
@@ -13,14 +12,8 @@ import {
   RecordViewSheetSection,
 } from "@/components/app-shell/record-view-sheet";
 import { formatAuditDateTime } from "@/lib/audit/display";
-import { useBranchPicker } from "@/lib/branches/hooks/use-branches";
 import { useTranslation } from "@/lib/i18n";
-import {
-  formatVehicleDate,
-  getBranchBadgeClass,
-  getFuelTypeBadgeClass,
-  getVehicleActiveBadgeClass,
-} from "@/lib/vehicles/display";
+import { formatVehicleDate } from "@/lib/vehicles/display";
 import { useVehicleLabels } from "@/lib/vehicles/hooks/use-vehicle-labels";
 import type { Vehicle } from "@/lib/vehicles/types";
 
@@ -35,8 +28,6 @@ type VehicleViewSheetProps = {
 export function VehicleViewSheet({ vehicle, open, onOpenChange, onEdit, onDelete }: VehicleViewSheetProps) {
   const { t } = useTranslation();
   const vehicleLabels = useVehicleLabels();
-  const branchesQuery = useBranchPicker(200);
-  const branches = branchesQuery.data?.items ?? [];
 
   if (!vehicle) return null;
 
@@ -49,19 +40,6 @@ export function VehicleViewSheet({ vehicle, open, onOpenChange, onEdit, onDelete
           icon={Car}
           eyebrow={t("vehicles.entity")}
           title={vehicle.name}
-          meta={
-            <>
-              <Badge className={getFuelTypeBadgeClass(vehicle.fuelType)}>
-                {vehicleLabels.fuelType(vehicle.fuelType)}
-              </Badge>
-              <Badge className={getBranchBadgeClass(vehicle.branch.code, branches)}>
-                {vehicleLabels.branch(vehicle.branch.code)}
-              </Badge>
-              <Badge className={getVehicleActiveBadgeClass(vehicle.active)}>
-                {vehicleLabels.active(vehicle.active)}
-              </Badge>
-            </>
-          }
         />
 
         <RecordViewSheetBody>

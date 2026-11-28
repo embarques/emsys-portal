@@ -5,7 +5,7 @@
     "updateFailed": "No se pudo actualizar el cargo.",
     "deleteFailed": "No se pudo eliminar el cargo."
   },
-  "title": "Cargos de empleados",
+  "title": "Administrar cargos de empleados",
   "entity": "Cargo",
   "description": "Administra los cargos disponibles en los formularios de empleados.",
   "add": "Nuevo cargo",
@@ -44,5 +44,13 @@
     }
   },
   "searchPlaceholder": "Buscar cargos…",
-  "entities": "cargos"
+  "entities": "cargos",
+  "view": {
+    "sections": {
+      "details": "Detalles",
+      "audit": "Auditoría"
+    },
+    "recordId": "ID del registro",
+    "edit": "Editar cargo"
+  }
 }

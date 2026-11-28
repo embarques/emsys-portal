@@ -136,7 +136,7 @@ On the first invoice details step, **Responsible party** asks who picked up the 
 
 Create Invoice reserves a system number when moving beyond Details. Screen two shows the confirmed number. The API takes an available number from the signed-in user’s pool first, then falls back to the company sequence. Cancel before posting a payment releases the number back to that user. Closing the browser leaves an unfinished claim recoverable on that browser. Manual entry keeps its existing permission and skips reservation.
 
-Invoices → Assign invoices manages backend-generated numbers for offline mobile creation.
+Invoices → Assign invoice numbers manages backend-generated numbers for offline mobile creation.
 Unused numbers may be in the company pool, assigned to a user, or claimed
 by a mobile installation. Downloaded numbers must be returned from that device
 before reassignment. They are excluded from customer invoice lists and financial
@@ -147,6 +147,16 @@ at, User, and Status with AND/OR joins. Received at is a separate API timestamp
 and displays a dash until supplied; it does not fall back to generation or
 assignment time. Advanced search awaits the backend endpoint in
 [the reserved invoice search contract](docs/reserved-invoice-search-api-contract.md).
+
+#### Invoice policies
+
+Portal route: `/invoice-policies` (Invoices header → Manage invoice policies, left of Assign invoice numbers). Tenant catalog of policy titles and body text with sort order and active flag.
+
+Active invoice policies are shown during **invoice creation** in the review step. The customer must agree to active policies. “Skip signature” is checked by default; unchecking it requires a signature (mouse or touch), including when there are no active policies. Creation sends `customerSignature: { signerName, data, contentType }` using the sender name, raw base64 PNG data, and `image/png`. The API supplies `signedAt` and `collectedBy`. Edit payloads omit signatures so the API preserves them; invoice JSON responses exclude both signatures. The signature is stored on the invoice instead of uploaded as a policy agreement document.
+
+Report mapping: sender signature → Autorizado por; receiver signature, API signing date, and submitted ID → Recibido por / Fecha / ID. Receiver signatures are collected through the shared delivery wizard opened from **Route Deliveries** or the permission-gated **Deliver** action in Barcodes.
+
+Permissions: `canListInvoicePolicy`, `canViewInvoicePolicy`, `canCreateInvoicePolicy`, `canUpdateInvoicePolicy`, `canDeleteInvoicePolicy` (`resourceType: invoice_policy`).
 
 ### Barcodes
 
@@ -602,18 +612,7 @@ This includes:
 - System settings
 - Roles and permissions
 - Company configuration
-- Invoice policies (text customers review and sign during invoice create)
 - Other administrative controls
-
-#### Invoice policies
-
-Portal route: `/invoice-policies` (Admin sidebar). Tenant catalog of policy titles and body text with sort order and active flag.
-
-Active invoice policies are shown during **invoice creation** in the review step. The customer must agree to active policies. “Skip signature” is checked by default; unchecking it requires a signature (mouse or touch), including when there are no active policies. Creation sends `customerSignature: { signerName, data, contentType }` using the sender name, raw base64 PNG data, and `image/png`. The API supplies `signedAt` and `collectedBy`. Edit payloads omit signatures so the API preserves them; invoice JSON responses exclude both signatures. The signature is stored on the invoice instead of uploaded as a policy agreement document.
-
-Report mapping: sender signature → Autorizado por; receiver signature, API signing date, and submitted ID → Recibido por / Fecha / ID. Receiver signatures are collected through the shared delivery wizard opened from **Route Deliveries** or the permission-gated **Deliver** action in Barcodes.
-
-Permissions: `canListInvoicePolicy`, `canViewInvoicePolicy`, `canCreateInvoicePolicy`, `canUpdateInvoicePolicy`, `canDeleteInvoicePolicy` (`resourceType: invoice_policy`).
 
 #### User Activity (Users)
 
