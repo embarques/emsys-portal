@@ -125,7 +125,6 @@ export function OrderFormWorkspace({ tabId, mode, entityId }: WorkspaceFormHostP
 
   return (
     <FormTabShell
-      className="max-w-6xl"
       title={isEditing ? t("orders.form.editTitle") : t("orders.form.addTitle")}
       description={isEditing && editingLabel ? editingLabel : t("orders.form.addDescription")}
     >

@@ -105,7 +105,7 @@ function JournalBatchConfirmWorkspace({
 
   if (!requestId || ids.length === 0) {
     return (
-      <FormTabShell title={text("confirmTitle")} className={clearance ? "max-w-4xl" : "max-w-6xl"}>
+      <FormTabShell title={text("confirmTitle")}>
         <div className="flex flex-1 flex-col gap-4 p-5">
           <p role="alert" className="text-sm text-destructive">
             {text("confirmMissingSelection")}
@@ -122,7 +122,7 @@ function JournalBatchConfirmWorkspace({
 
   if (!canProcess) {
     return (
-      <FormTabShell title={text("confirmTitle")} className={clearance ? "max-w-4xl" : "max-w-6xl"}>
+      <FormTabShell title={text("confirmTitle")}>
         <div className="flex flex-1 flex-col gap-4 p-5">
           <p role="alert" className="text-sm text-destructive">
             {t("common.errors.forbidden")}
@@ -147,7 +147,6 @@ function JournalBatchConfirmWorkspace({
     <FormTabShell
       title={text("confirmTitle")}
       description={text("confirmDescription")}
-      className={clearance ? "max-w-4xl" : "max-w-7xl"}
     >
       <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto overscroll-contain p-5">
         {clearance ? <ClearanceConfirmList rows={rows} chartAccountsById={chartAccountsById} /> : null}

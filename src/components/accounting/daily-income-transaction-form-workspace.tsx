@@ -242,7 +242,7 @@ function DailyIncomeTransactionEntry({ tabId, mode, entityId }: WorkspaceFormHos
           <X className="size-4" />
         </Button>
       ) : undefined}
-      className="min-w-0 max-w-5xl"
+      className="min-w-0"
     >
       {isEditing && initialValues ? (
         <AddTransactionWizard

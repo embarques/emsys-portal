@@ -1,5 +1,5 @@
-/** Max-width + horizontal centering for dashboard workspace content. */
-export const workspaceContentShellClassName = "mx-auto w-full max-w-[1600px]";
+/** Full-width dashboard workspace content (padding lives on the frame / tab bar). */
+export const workspaceContentShellClassName = "w-full";
 
 /** Standard padding for workspace page content (tab panels, mobile fallback). */
 export const workspaceContentPaddingClassName = "p-4 md:p-6 lg:p-8";

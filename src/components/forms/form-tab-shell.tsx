@@ -27,7 +27,7 @@ export function FormTabShell({ title, description, actions, children, className,
     <div
       ref={shellRef}
       className={cn(
-        "mx-auto flex h-[calc(100dvh-var(--form-viewport-inset,8rem))] w-full max-w-3xl min-h-0 flex-col",
+        "flex h-[calc(100dvh-var(--form-viewport-inset,8rem))] w-full min-h-0 flex-col",
         className,
       )}
     >

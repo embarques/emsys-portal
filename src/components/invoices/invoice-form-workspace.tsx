@@ -130,7 +130,7 @@ function InvoiceWizardShell({
   const cancelDraftRef = useRef<(() => void) | null>(null);
   return (
     <div ref={shellRef} className={cn("flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden overflow-x-hidden", inDialog && "md:block", invoiceWizardTypographyRoot)}>
-      <div className={cn("mx-auto flex min-h-0 min-w-0 w-full max-w-full flex-1 flex-col overflow-x-hidden md:max-w-6xl", inDialog && "md:block")}>
+      <div className={cn("flex min-h-0 min-w-0 w-full max-w-full flex-1 flex-col overflow-x-hidden", inDialog && "md:block")}>
         <div
           className={cn(
             "flex min-h-0 min-w-0 max-w-full flex-1 flex-col overflow-hidden bg-card md:rounded-xl md:border md:border-border md:shadow-sm",

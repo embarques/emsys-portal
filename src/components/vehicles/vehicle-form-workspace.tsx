@@ -104,7 +104,6 @@ export function VehicleFormWorkspace({ tabId, mode, entityId }: WorkspaceFormHos
 
   return (
     <FormTabShell
-      className="max-w-6xl"
       title={isEditing ? t("vehicles.form.editTitle") : t("vehicles.form.addTitle")}
       description={isEditing && editing ? editing.name : t("vehicles.form.addDescription")}
     >
